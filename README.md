@@ -15,6 +15,10 @@ Right now I have different priorities, but I will probably do it later. If there
 * SQLite for the stores
 * libaxolotl, see below
 
+Optional:
+* [cmocka](https://cmocka.org/) for testing (`make test`)
+* [gcovr](http://gcovr.com/) for a coverage report (`make coverage`)
+
 ## Installation and Usage
 An old version of [libsignal-c](https://github.com/WhisperSystems/libsignal-protocol-c) can be found in the `lib` directory, which I hope will not get me into trouble. I manually patched it for easier installation as a shared lib though, so when you follow the installation instructions in the subdir's README, instead of using the cmake command it tells you, use `cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON ..`, and after the `make` you need to call `make install` (as superuser).
 

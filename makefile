@@ -5,7 +5,8 @@ TDIR = test
 TFN = test_all
 CDIR = coverage
 
-CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Wstrict-overflow -fno-strict-aliasing -funsigned-char -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -fno-builtin-memset
+CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Wstrict-overflow -fno-strict-aliasing -funsigned-char -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -fno-builtin-memset
+PICFLAGS=-fPIC $(CFLAGS)
 LFLAGS = -pthread -ldl -laxolotl-c -lm -lcrypto -lsqlite3
 
 all: client
@@ -35,6 +36,17 @@ $(BDIR)/crypto.o: $(SDIR)/axc_crypto.c $(BDIR)
 
 $(BDIR)/store.o: $(SDIR)/axc_store.c $(BDIR)
 	gcc $(CFLAGS) -c $< -o $@
+	
+axc.o: $(SDIR)/axc.c $(BDIR)
+	gcc $(PICFLAGS) -c $< -o $(BDIR)/$@
+	
+axc_crypto.o: $(SDIR)/axc_crypto.c $(BDIR)
+	gcc $(PICFLAGS) -c $< -o $(BDIR)/$@
+
+axc_store.o: $(SDIR)/axc_store.c $(BDIR)
+	gcc $(PICFLAGS) -c $< -o $(BDIR)/$@
+	
+axc-pic: axc.o axc_crypto.o axc_store.o
 	
 .PHONY: test
 test: test_store.o test_client.o
