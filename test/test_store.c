@@ -368,9 +368,6 @@ void test_db_session_get_sub_device_sessions_should_find_and_return_correct_numb
 
   assert_int_equal(axolotl_int_list_size(list_a), 2);
   assert_int_equal(axolotl_int_list_size(list_b), 0);
-
-  assert_int_equal(axolotl_int_list_at(list_a, 0), addr_alice_21.device_id);
-  assert_int_equal(axolotl_int_list_at(list_a, 1), addr_alice_42.device_id);
 }
 
 void test_db_session_contains_should_return_correct_values(void ** state) {

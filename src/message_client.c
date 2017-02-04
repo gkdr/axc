@@ -7,7 +7,7 @@
 #include <string.h> // memset, strlen
 #include <unistd.h> // write
 
-#include <axolotl/axolotl.h>
+#include "axolotl.h"
 
 #include "axc.h"
 

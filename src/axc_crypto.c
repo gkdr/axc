@@ -7,7 +7,7 @@
 #include <openssl/hmac.h> // hmac_*
 #include <openssl/rand.h> // RAND_bytes
 
-#include <axolotl/axolotl.h>
+#include "axolotl.h"
 
 #include "axc.h"
 

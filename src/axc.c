@@ -6,12 +6,12 @@
 #include <string.h> // memset
 #include <time.h> // clock_gettime
 
-#include <axolotl/axolotl.h>
-#include <axolotl/key_helper.h>
-#include <axolotl/protocol.h>
-#include <axolotl/session_builder.h>
-#include <axolotl/session_cipher.h>
-#include <axolotl/session_state.h>
+#include "axolotl.h"
+#include "key_helper.h"
+#include "protocol.h"
+#include "session_builder.h"
+#include "session_cipher.h"
+#include "session_state.h"
 
 #include "axc.h"
 #include "axc_store.h"

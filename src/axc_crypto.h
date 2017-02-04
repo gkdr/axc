@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include <axolotl/axolotl.h>
+#include "axolotl.h"
 
 void axc_crypto_init(void);
 void axc_crypto_teardown(void);

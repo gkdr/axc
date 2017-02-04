@@ -1,7 +1,7 @@
 #pragma once
 
-#include <axolotl/axolotl.h>
-#include <axolotl/key_helper.h>
+#include "axolotl.h"
+#include "key_helper.h"
 
 #include "axc.h"
 

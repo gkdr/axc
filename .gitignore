@@ -1,2 +1,4 @@
 build/
 lib/libaxolotl-c/build
+*.gc*
+*.o

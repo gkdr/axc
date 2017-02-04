@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include <axolotl/axolotl.h>
+#include "axolotl.h"
 
 typedef struct axc_context axc_context;
 typedef struct axc_handshake axc_handshake;

@@ -3,8 +3,8 @@
 #include <stdlib.h> // exit
 #include <string.h> // strlen
 
-#include <axolotl/axolotl.h>
-#include <axolotl/key_helper.h>
+#include "axolotl.h"
+#include "key_helper.h"
 
 #include <sqlite3.h>
 
@@ -82,6 +82,12 @@ static int db_conn_open(sqlite3 ** db_pp, sqlite3_stmt ** pstmt_pp, const char s
 
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
+
+  if (!stmt) {
+    ret_val = -1;
+    err_msg = "stmt is null";
+    goto cleanup;
+  }
 
 
   ret_val = sqlite3_open(axc_context_get_db_fn(axc_ctx_p), &db_p);
