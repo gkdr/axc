@@ -11,17 +11,18 @@ I did not update the dependency because at first I was too lazy to rename everyt
 Right now I have different priorities, but I will probably do it later. If there is any interest, tell me and I will (probably) hurry up a bit.
 
 ## Dependencies
-* OpenSSL for the crypto
-* SQLite for the stores
-* libaxolotl, see below
+* gcrypt for the crypto (`libgcrypt20-dev`)
+* SQLite for the stores (`libsqlite3-dev`)
+* patched libaxolotl version that comes with this repo, see below 
 
 Optional:
 * [cmocka](https://cmocka.org/) for testing (`make test`)
 * [gcovr](http://gcovr.com/) for a coverage report (`make coverage`)
 
 ## Installation and Usage
-An old version of [libsignal-c](https://github.com/WhisperSystems/libsignal-protocol-c) can be found in the `lib` directory, which I hope will not get me into trouble. I manually patched it for easier installation as a shared lib though, so when you follow the installation instructions in the subdir's README, instead of using the cmake command it tells you, use `cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON ..`, and after the `make` you need to call `make install` (as superuser).
+An old version of [libsignal-c](https://github.com/WhisperSystems/libsignal-protocol-c) can be found in the `lib` directory, which I hope will not get me into trouble. I manually patched it to produce PIC for the static lib so it can be included in a shared lib (such as a libpurple plugin).
+There is also the possibility to install it as a shared lib by typing `cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON ..` instead of what is used in the makefile for the axc-pic target, and `sudo make install` after the `make`.
+It also still includes the code for synchronous key exchange (as opposed to just using prekeys) and this lib supports it.
 
-After you have done that, it should work just fine.
 The `client` make target is a little demo that should explain the usage a bit, and if that is not enough there is also the testcases and the documentation.
 The basic idea is to create the `axc_context`, set what is needed (e.g. path to the database or logging function), init it, and then pass it to every function as it contains all necessary data. In theory you should not have to directly communicate with libaxolotl.

@@ -388,7 +388,7 @@ void test_message_encrypt_decrypt(void **state) {
 
   axc_buf * msg_a1_p = axc_buf_create((uint8_t *) "hallo", 6);
   axc_buf * msg_a2_p = axc_buf_create((uint8_t *) "sup", 4);
-  axc_buf * msg_b1_p = axc_buf_create((uint8_t *) "hi", 3);
+  axc_buf * msg_b1_p = axc_buf_create((uint8_t *) "0123456789abcdef", 16);
   axc_buf * msg_b2_p = axc_buf_create((uint8_t *) "na", 3);
 
   assert_int_not_equal(axc_message_encrypt_and_serialize((void *) 0, (void *) 0, (void *) 0, (void *) 0), 0);
