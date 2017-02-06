@@ -8,11 +8,12 @@ CDIR = coverage
 AX_DIR=./lib/libaxolotl-c
 AX_BDIR=$(AX_DIR)/build/src
 
-PKGCFG_C=$(shell pkg-config --cflags sqlite3) $(shell libgcrypt-config --cflags)
-PKGCFG_L=$(shell pkg-config --libs sqlite3) $(shell libgcrypt-config --libs)
+PKGCFG_C=$(shell pkg-config --cflags sqlite3 glib-2.0) $(shell libgcrypt-config --cflags)
+PKGCFG_L=$(shell pkg-config --libs sqlite3 glib-2.0) $(shell libgcrypt-config --libs)
 
 HEADERS=-I$(AX_DIR)/src
-CFLAGS =$(HEADERS) $(PKGCFG_C) -std=c11 -Wall -Wextra -Wpedantic -Wstrict-overflow -fno-strict-aliasing -funsigned-char -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -fno-builtin-memset
+CFLAGS=$(HEADERS) $(PKGCFG_C) -std=c11 -Wall -Wextra -Wpedantic -Wstrict-overflow -fno-strict-aliasing -funsigned-char -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -fno-builtin-memset
+TESTFLAGS=$(HEADERS) $(PKGCFG_C) -g -O0 --coverage
 PICFLAGS=-fPIC $(CFLAGS)
 LFLAGS = -pthread -ldl $(PKGCFG_L) $(AX_BDIR)/libaxolotl-c.a -lm
 LFLAGS_T= -lcmocka $(LFLAGS)
@@ -54,7 +55,7 @@ test: libax test_store.o test_client.o
 
 .PHONY: test_store.o
 test_store.o: $(SDIR)/axc_store.c $(SDIR)/axc_crypto.c $(TDIR)/test_store.c
-	gcc --coverage -O0 -g $(HEADERS) -o $(TDIR)/$@  $(TDIR)/test_store.c $(SDIR)/axc_crypto.c $(LFLAGS_T)
+	gcc $(TESTFLAGS) -o $(TDIR)/$@  $(TDIR)/test_store.c $(SDIR)/axc_crypto.c $(LFLAGS_T)
 	-$(TDIR)/$@
 	mv *.g* $(TDIR)
 	
@@ -62,7 +63,7 @@ test_store: test_store.o
 	
 .PHONY: test_client.o
 test_client.o: $(SDIR)/axc.c $(SDIR)/axc_crypto.c  $(SDIR)/axc_store.c $(TDIR)/test_client.c
-	gcc --coverage -O0 -g $(HEADERS) -o $(TDIR)/$@ $(SDIR)/axc_crypto.c $(TDIR)/test_client.c $(LFLAGS_T)
+	gcc $(TESTFLAGS) -g $(HEADERS) -o $(TDIR)/$@ $(SDIR)/axc_crypto.c $(TDIR)/test_client.c $(LFLAGS_T)
 	-$(TDIR)/$@
 	mv *.g* $(TDIR)
 	

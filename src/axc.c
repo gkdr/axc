@@ -4,7 +4,8 @@
 #include <stdio.h> // printf, fprintf
 #include <stdlib.h> // exit, malloc
 #include <string.h> // memset
-#include <time.h> // clock_gettime
+
+#include <glib.h>
 
 #include "axolotl.h"
 #include "key_helper.h"
@@ -607,8 +608,6 @@ int axc_install(axc_context * ctx_p) {
   axolotl_buffer * last_resort_key_buf_p = (void *) 0;
   axolotl_buffer * signed_pre_key_data_p = (void *) 0;
   uint32_t registration_id;
-  struct timespec time = {0};
-  uint64_t timestamp = 0;
 
   axc_log(ctx_p, AXC_LOG_INFO, "%s: calling install-time functions", __func__);
 
@@ -708,14 +707,7 @@ int axc_install(axc_context * ctx_p) {
     }
     axc_log(ctx_p, AXC_LOG_DEBUG, "%s: generated last resort pre key", __func__ );
 
-    ret_val = clock_gettime(CLOCK_REALTIME, &time);
-    if (ret_val) {
-      err_msg = "failed to get the time";
-      goto cleanup;
-    }
-
-    timestamp = time.tv_sec * 1000 + time.tv_nsec / 1000000;
-    ret_val = axolotl_key_helper_generate_signed_pre_key(&signed_pre_key_p, identity_key_pair_p, 0, timestamp, global_context_p);
+    ret_val = axolotl_key_helper_generate_signed_pre_key(&signed_pre_key_p, identity_key_pair_p, 0, g_get_real_time(), global_context_p);
     if (ret_val) {
       err_msg = "failed to generate signed pre key";
       goto cleanup;
