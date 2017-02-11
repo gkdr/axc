@@ -7,6 +7,7 @@ CDIR = coverage
 
 AX_DIR=./lib/libaxolotl-c
 AX_BDIR=$(AX_DIR)/build/src
+AX_PATH=$(AX_BDIR)/libaxolotl-c.a
 
 PKGCFG_C=$(shell pkg-config --cflags sqlite3 glib-2.0) $(shell libgcrypt-config --cflags)
 PKGCFG_L=$(shell pkg-config --libs sqlite3 glib-2.0) $(shell libgcrypt-config --libs)
@@ -15,43 +16,35 @@ HEADERS=-I$(AX_DIR)/src
 CFLAGS=$(HEADERS) $(PKGCFG_C) -std=c11 -Wall -Wextra -Wpedantic -Wstrict-overflow -fno-strict-aliasing -funsigned-char -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -fno-builtin-memset
 TESTFLAGS=$(HEADERS) $(PKGCFG_C) -g -O0 --coverage
 PICFLAGS=-fPIC $(CFLAGS)
-LFLAGS = -pthread -ldl $(PKGCFG_L) $(AX_BDIR)/libaxolotl-c.a -lm
+LFLAGS = -pthread -ldl $(PKGCFG_L) $(AX_PATH) -lm
 LFLAGS_T= -lcmocka $(LFLAGS)
 
-all: client
+all: $(BDIR)/libaxc.a
 
 $(BDIR):
 	mkdir -p $@
 
-client: $(SDIR)/message_client.c $(BDIR)/store.o $(BDIR)/crypto.o $(BDIR)/axc.o
+client: $(SDIR)/message_client.c $(BDIR)/axc_store.o $(BDIR)/axc_crypto.o $(BDIR)/axc.o $(AX_PATH)
 	mkdir -p $@
 	gcc -D_POSIX_SOURCE -D_XOPEN_SOURCE=700 $(CFLAGS) $^ -o $@/$@.o $(LFLAGS)
 	
 $(BDIR)/axc.o: $(SDIR)/axc.c $(BDIR)
-	gcc -D_POSIX_SOURCE -D_GNU_SOURCE $(CFLAGS) -c $< -o $@
+	gcc $(PICFLAGS) -c $< -o $@
 	
-$(BDIR)/crypto.o: $(SDIR)/axc_crypto.c $(BDIR)
-	gcc $(CFLAGS) -c $< -o $@
+$(BDIR)/axc_crypto.o: $(SDIR)/axc_crypto.c $(BDIR)
+	gcc $(PICFLAGS) -c $< -o $@
 
-$(BDIR)/store.o: $(SDIR)/axc_store.c $(BDIR)
-	gcc $(CFLAGS) -c $< -o $@
+$(BDIR)/axc_store.o: $(SDIR)/axc_store.c $(BDIR)
+	gcc $(PICFLAGS) -c $< -o $@
 	
-axc.o: $(SDIR)/axc.c $(BDIR)
-	gcc $(PICFLAGS) -c $< -o $(BDIR)/$@
-	
-axc_crypto.o: $(SDIR)/axc_crypto.c $(BDIR)
-	gcc $(PICFLAGS) -c $< -o $(BDIR)/$@
+$(BDIR)/libaxc.a: $(BDIR)/axc.o $(BDIR)/axc_crypto.o $(BDIR)/axc_store.o
+	ar rcs $@ $^
 
-axc_store.o: $(SDIR)/axc_store.c $(BDIR)
-	gcc $(PICFLAGS) -c $< -o $(BDIR)/$@
-	
-axc-pic: axc.o axc_crypto.o axc_store.o
-
-libax:
+$(AX_PATH):
 	cd $(AX_DIR) && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make
 	
 .PHONY: test
-test: libax test_store.o test_client.o
+test: $(AX_PATH) test_store.o test_client.o
 
 .PHONY: test_store.o
 test_store.o: $(SDIR)/axc_store.c $(SDIR)/axc_crypto.c $(TDIR)/test_store.c
