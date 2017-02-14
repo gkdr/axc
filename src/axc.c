@@ -25,8 +25,10 @@ void recursive_mutex_lock(void * user_data);
 void recursive_mutex_unlock(void * user_data);
 
 typedef struct axc_mutexes {
+  #ifndef NO_THREADS
   pthread_mutex_t * mutex_p;
   pthread_mutexattr_t * mutex_attr_p;
+  #endif
 } axc_mutexes;
 
 struct axc_context {
@@ -371,7 +373,7 @@ int axc_context_create(axc_context ** ctx_pp) {
 }
 
 int axc_context_set_db_fn(axc_context * ctx_p, char * filename, size_t fn_len) {
-  char * db_fn = strndup(filename, fn_len);
+  char * db_fn = g_strndup(filename, fn_len);
   if (!db_fn) {
     return -1;
   }
