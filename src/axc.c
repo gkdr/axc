@@ -347,6 +347,8 @@ void axc_mutexes_destroy(axc_mutexes * mutexes_p) {
 
     free(mutexes_p);
   }
+  #else
+  (void) mutexes_p;
   #endif
 }
 
@@ -416,6 +418,8 @@ void recursive_mutex_lock(void * user_data) {
   #ifndef NO_THREADS
   axc_context * ctx_p = (axc_context *) user_data;
   pthread_mutex_lock(ctx_p->mutexes_p->mutex_p);
+  #else
+  (void) user_data;
   #endif
 }
 
@@ -423,6 +427,8 @@ void recursive_mutex_unlock(void * user_data) {
   #ifndef NO_THREADS
   axc_context * ctx_p = (axc_context *) user_data;
   pthread_mutex_unlock(ctx_p->mutexes_p->mutex_p);
+  #else
+  (void) user_data;
   #endif
 }
 
