@@ -31,6 +31,9 @@ client: $(SDIR)/message_client.c $(BDIR)/axc_store.o $(BDIR)/axc_crypto.o $(BDIR
 $(BDIR)/axc.o: $(SDIR)/axc.c $(BDIR)
 	gcc $(PICFLAGS) -c $< -o $@
 	
+$(BDIR)/axc-nt.o: $(SDIR)/axc.c $(BDIR)
+	gcc $(PICFLAGS) -DNO_THREADS -c $< -o $@
+	
 $(BDIR)/axc_crypto.o: $(SDIR)/axc_crypto.c $(BDIR)
 	gcc $(PICFLAGS) -c $< -o $@
 
@@ -38,6 +41,9 @@ $(BDIR)/axc_store.o: $(SDIR)/axc_store.c $(BDIR)
 	gcc $(PICFLAGS) -c $< -o $@
 	
 $(BDIR)/libaxc.a: $(BDIR)/axc.o $(BDIR)/axc_crypto.o $(BDIR)/axc_store.o
+	ar rcs $@ $^
+	
+$(BDIR)/libaxc-nt.a: $(BDIR)/axc-nt.o $(BDIR)/axc_crypto.o $(BDIR)/axc_store.o
 	ar rcs $@ $^
 
 $(AX_PATH):

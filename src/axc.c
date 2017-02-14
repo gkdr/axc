@@ -1,9 +1,12 @@
 #include <inttypes.h>
-#include <pthread.h> // mutex stuff
 #include <stdarg.h> // va_*
 #include <stdio.h> // printf, fprintf
 #include <stdlib.h> // exit, malloc
 #include <string.h> // memset
+
+#ifndef NO_THREADS
+#include <pthread.h> // mutex stuff
+#endif
 
 #include <glib.h>
 
@@ -291,6 +294,7 @@ void axc_log(axc_context * ctx_p, int level, const char * format, ...) {
 }
 
 int axc_mutexes_create_and_init(axc_mutexes ** mutexes_pp) {
+  #ifndef NO_THREADS
   axc_mutexes * mutexes_p = malloc(sizeof(axc_mutexes));
   if (!mutexes_p) {
     return -1;
@@ -320,11 +324,16 @@ int axc_mutexes_create_and_init(axc_mutexes ** mutexes_pp) {
   if (pthread_mutex_init(mutex_p, mutex_attr_p)) {
     return -6;
   }
+  #else
+  *mutexes_pp = (void *) 0;
+  #endif
+
 
   return 0;
 }
 
 void axc_mutexes_destroy(axc_mutexes * mutexes_p) {
+  #ifndef NO_THREADS
   if (mutexes_p) {
     if (mutexes_p->mutex_p) {
       pthread_mutex_destroy(mutexes_p->mutex_p);
@@ -338,6 +347,7 @@ void axc_mutexes_destroy(axc_mutexes * mutexes_p) {
 
     free(mutexes_p);
   }
+  #endif
 }
 
 int axc_context_create(axc_context ** ctx_pp) {
@@ -403,13 +413,17 @@ void axc_context_destroy_all(axc_context * ctx_p) {
 }
 
 void recursive_mutex_lock(void * user_data) {
+  #ifndef NO_THREADS
   axc_context * ctx_p = (axc_context *) user_data;
   pthread_mutex_lock(ctx_p->mutexes_p->mutex_p);
+  #endif
 }
 
 void recursive_mutex_unlock(void * user_data) {
+  #ifndef NO_THREADS
   axc_context * ctx_p = (axc_context *) user_data;
   pthread_mutex_unlock(ctx_p->mutexes_p->mutex_p);
+  #endif
 }
 
 axc_buf * axc_buf_create(const uint8_t * data, size_t len) {
@@ -537,12 +551,14 @@ int axc_init(axc_context * ctx_p) {
   axc_log(ctx_p, AXC_LOG_DEBUG, "%s: set axolotl crypto provider", __func__);
 
   // 3. set locking functions
+  #ifndef NO_THREADS
   if (axolotl_context_set_locking_functions(ctx_p->axolotl_global_context_p, recursive_mutex_lock, recursive_mutex_unlock)) {
     err_msg = "failed to set locking functions";
     ret_val = -1;
     goto cleanup;
   }
   axc_log(ctx_p, AXC_LOG_DEBUG, "%s: set locking functions", __func__);
+  #endif
 
   // init store context
 

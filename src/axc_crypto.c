@@ -21,7 +21,9 @@ void axc_crypto_teardown(void) {
 }
 
 int random_bytes(uint8_t * data_p, size_t len, void * user_data_p) {
-  axc_context * ctx_p = (axc_context *) user_data_p;
+  axc_context * axc_ctx_p = (axc_context *) user_data_p;
+  (void) axc_ctx_p;
+
   gcry_randomize(data_p, len, GCRY_STRONG_RANDOM);
 
   return AX_SUCCESS;
@@ -74,6 +76,7 @@ cleanup:
 
 int hmac_sha256_update(void * hmac_context_p, const uint8_t * data_p, size_t data_len, void * user_data_p) {
   axc_context * axc_ctx_p = (axc_context *) user_data_p;
+  (void) axc_ctx_p;
 
   gcry_mac_write(*((gcry_mac_hd_t *) hmac_context_p), data_p, data_len);
 

@@ -149,12 +149,14 @@ void test_init(void **state) {
   assert_int_equal(axc_context_set_db_fn(ctx_global_p, test_fn, strlen(test_fn)), 0);
   assert_int_equal(axc_init(ctx_global_p), 0);
 
+  #ifndef NO_THREADS
   assert_ptr_not_equal(ctx_global_p->mutexes_p, (void *) 0);
   assert_ptr_not_equal(ctx_global_p->mutexes_p->mutex_p, (void *) 0);
   assert_ptr_not_equal(ctx_global_p->mutexes_p->mutex_attr_p, (void *) 0);
   int type = 0;
   assert_int_equal(pthread_mutexattr_gettype(ctx_global_p->mutexes_p->mutex_attr_p, &type), 0);
   assert_int_equal(type, PTHREAD_MUTEX_RECURSIVE);
+  #endif
 
   assert_ptr_not_equal(ctx_global_p->axolotl_global_context_p, (void *) 0);
 
@@ -164,17 +166,25 @@ void test_init(void **state) {
 void test_recursive_mutex_lock(void **state) {
   (void) state;
 
+  #ifndef NO_THREADS
   assert_ptr_not_equal(ctx_global_p->mutexes_p, (void *) 0);
   recursive_mutex_lock(ctx_global_p);
   assert_int_equal(pthread_mutex_unlock(ctx_global_p->mutexes_p->mutex_p), 0);
+  #else
+  skip();
+  #endif
 }
 
 void test_recursive_mutex_unlock(void **state){
   (void) state;
 
+  #ifndef NO_THREADS
   recursive_mutex_lock(ctx_global_p);
   recursive_mutex_unlock(ctx_global_p);
   assert_int_not_equal(pthread_mutex_unlock(ctx_global_p->mutexes_p->mutex_p), 0);
+  #else
+  skip();
+  #endif
 }
 
 void test_install_should_generate_necessary_data(void **state) {
