@@ -67,8 +67,10 @@ cleanup:
       axc_log(axc_ctx_p, AXC_LOG_ERROR, "%s: %s\n", __func__, err_msg);
     }
 
-    gcry_mac_close(*hmac_hd_p);
-    free(hmac_hd_p);
+    if (hmac_hd_p) {
+      gcry_mac_close(*hmac_hd_p);
+      free(hmac_hd_p);
+    }
   }
 
   return ret_val;
