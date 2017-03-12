@@ -623,6 +623,7 @@ void axc_cleanup(axc_context * ctx_p) {
 int axc_install(axc_context * ctx_p) {
   char * err_msg = "";
   int ret_val = 0;
+  int db_needs_init = 0;
 
   axolotl_context * global_context_p = ctx_p->axolotl_global_context_p;
   ratchet_identity_key_pair * identity_key_pair_p = (void *) 0;
@@ -644,7 +645,6 @@ int axc_install(axc_context * ctx_p) {
 
   int init_status = AXC_DB_NOT_INITIALIZED;
   int db_needs_reset = 0;
-  int db_needs_init = 0;
   ret_val = axc_db_init_status_get(&init_status, ctx_p);
   switch (ret_val) {
     case -1:
