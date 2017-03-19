@@ -7,7 +7,7 @@ LIBGCRYPT_CONFIG ?= libgcrypt-config
 MKDIR = mkdir
 MKDIR_P = mkdir -p
 CMAKE ?= cmake
-CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
+CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-fPIC
 
 
 SDIR = src
@@ -17,9 +17,9 @@ TDIR = test
 TFN = test_all
 CDIR = coverage
 
-AX_DIR=./lib/libaxolotl-c
+AX_DIR=./lib/libsignal-protocol-c
 AX_BDIR=$(AX_DIR)/build/src
-AX_PATH=$(AX_BDIR)/libaxolotl-c.a
+AX_PATH=$(AX_BDIR)/libsignal-protocol-c.a
 
 PKGCFG_C=$(shell $(PKG_CONFIG) --cflags sqlite3 glib-2.0) \
 		 $(shell $(LIBGCRYPT_CONFIG) --cflags)

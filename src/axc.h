@@ -2,15 +2,15 @@
 
 #include <stdint.h>
 
-#include "axolotl.h"
+#include "signal_protocol.h"
 
 typedef struct axc_context axc_context;
 typedef struct axc_handshake axc_handshake;
 typedef struct axc_bundle axc_bundle;
 typedef struct axc_buf_list_item axc_buf_list_item;
 
-typedef axolotl_buffer axc_buf;
-typedef axolotl_address axc_address;
+typedef signal_buffer axc_buf;
+typedef signal_protocol_address axc_address;
 
 #define AXC_LOG_ERROR   0
 #define AXC_LOG_WARNING 1
@@ -58,7 +58,7 @@ void axc_context_set_log_level(axc_context * ctx_p, int level);
 int axc_context_get_log_level(axc_context * ctx_p);
 
 void axc_context_destroy_all(axc_context * ctx_p);
-axolotl_context * axc_context_get_axolotl_ctx(axc_context * ctx_p);
+signal_context * axc_context_get_axolotl_ctx(axc_context * ctx_p);
 
 void axc_default_log(int level, const char *message, size_t len, void *user_data);
 void axc_log(axc_context * ctx_p, int level, const char * format, ...);

@@ -10,10 +10,11 @@
 
 #include <glib.h>
 
-#include "axolotl.h"
+#include "signal_protocol.h"
 #include "key_helper.h"
 #include "protocol.h"
 #include "session_builder.h"
+#include "session_builder_internal.h"
 #include "session_cipher.h"
 #include "session_state.h"
 
@@ -32,8 +33,8 @@ typedef struct axc_mutexes {
 } axc_mutexes;
 
 struct axc_context {
-    axolotl_context * axolotl_global_context_p;
-    axolotl_store_context * axolotl_store_context_p;
+    signal_context * axolotl_global_context_p;
+    signal_protocol_store_context * axolotl_store_context_p;
     axc_mutexes * mutexes_p;
     char * db_filename;
     void (*log_func)(int level, const char * message, size_t len, void * user_data);
@@ -147,7 +148,7 @@ int axc_bundle_collect(size_t n, axc_context * ctx_p, axc_bundle ** bundle_pp) {
   }
   bundle_p->pre_keys_head_p = pre_key_list_p;
 
-  ret_val = axolotl_signed_pre_key_load_key(ctx_p->axolotl_store_context_p, &signed_prekey_p, signed_prekey_id);
+  ret_val = signal_protocol_signed_pre_key_load_key(ctx_p->axolotl_store_context_p, &signed_prekey_p, signed_prekey_id);
   if (ret_val) {
     err_msg = "failed to get signed pre key";
     goto cleanup;
@@ -171,7 +172,7 @@ int axc_bundle_collect(size_t n, axc_context * ctx_p, axc_bundle ** bundle_pp) {
   }
   bundle_p->signed_pre_key_signature_p = signed_prekey_signature_data_p;
 
-  ret_val = axolotl_identity_get_key_pair(ctx_p->axolotl_store_context_p, &identity_key_pair_p);
+  ret_val = signal_protocol_identity_get_key_pair(ctx_p->axolotl_store_context_p, &identity_key_pair_p);
   if (ret_val) {
     err_msg = "failed to retrieve identity key pair";
     goto cleanup;
@@ -197,8 +198,8 @@ cleanup:
     axc_log(ctx_p, AXC_LOG_ERROR, "%s: %s", __func__, err_msg);
   }
 
-  AXOLOTL_UNREF(signed_prekey_p);
-  AXOLOTL_UNREF(identity_key_pair_p);
+  SIGNAL_UNREF(signed_prekey_p);
+  SIGNAL_UNREF(identity_key_pair_p);
   axc_log(ctx_p, AXC_LOG_DEBUG, "%s: leaving", __func__);
   return ret_val;
 }
@@ -402,14 +403,14 @@ int axc_context_get_log_level(axc_context * ctx_p) {
   return ctx_p->log_level;
 }
 
-axolotl_context * axc_context_get_axolotl_ctx(axc_context * ctx_p) {
+signal_context * axc_context_get_axolotl_ctx(axc_context * ctx_p) {
   return ctx_p ? ctx_p->axolotl_global_context_p : (void *) 0;
 }
 
 void axc_context_destroy_all(axc_context * ctx_p) {
   if (ctx_p) {
-    axolotl_context_destroy(ctx_p->axolotl_global_context_p);
-    axolotl_store_context_destroy(ctx_p->axolotl_store_context_p);
+    signal_context_destroy(ctx_p->axolotl_global_context_p);
+    signal_protocol_store_context_destroy(ctx_p->axolotl_store_context_p);
     axc_mutexes_destroy(ctx_p->mutexes_p);
 
     free(ctx_p->db_filename);
@@ -435,48 +436,19 @@ void recursive_mutex_unlock(void * user_data) {
 }
 
 axc_buf * axc_buf_create(const uint8_t * data, size_t len) {
-  return axolotl_buffer_create(data, len);
+  return signal_buffer_create(data, len);
 }
 
 uint8_t * axc_buf_get_data(axc_buf * buf) {
-  return axolotl_buffer_data(buf);
+  return signal_buffer_data(buf);
 }
 
 size_t axc_buf_get_len(axc_buf * buf) {
-  return axolotl_buffer_len(buf);
+  return signal_buffer_len(buf);
 }
 
 void axc_buf_free(axc_buf * buf) {
-  axolotl_buffer_bzero_free(buf);
-}
-
-static axc_handshake * axc_handshake_alloc(session_builder * sb_p, axc_buf * msg_p) {
-  axc_handshake * hs_p = malloc(sizeof(axc_handshake));
-  if (!hs_p) {
-    return (void *) 0;
-  }
-
-  hs_p->session_builder_p = sb_p;
-  hs_p->handshake_msg_p = msg_p;
-
-  return hs_p;
-}
-
-void axc_handshake_destroy(axc_handshake * hs) {
-  if (hs) {
-    if (hs->session_builder_p) {
-      session_builder_free(hs->session_builder_p);
-    }
-    if (hs->handshake_msg_p) {
-      axc_buf_free(hs->handshake_msg_p);
-    }
-
-    free(hs);
-  }
-}
-
-axc_buf * axc_handshake_get_data(axc_handshake * handshake_p) {
-  return handshake_p->handshake_msg_p;
+  signal_buffer_bzero_free(buf);
 }
 
 int axc_init(axc_context * ctx_p) {
@@ -485,9 +457,9 @@ int axc_init(axc_context * ctx_p) {
   int ret_val = 0;
 
   axc_mutexes * mutexes_p = (void *) 0;
-  axolotl_store_context * store_context_p = (void *) 0;
+  signal_protocol_store_context * store_context_p = (void *) 0;
 
-  axolotl_session_store session_store = {
+  signal_protocol_session_store session_store = {
       .load_session_func = &axc_db_session_load,
       .get_sub_device_sessions_func = &axc_db_session_get_sub_device_sessions,
       .store_session_func = &axc_db_session_store,
@@ -497,7 +469,7 @@ int axc_init(axc_context * ctx_p) {
       .destroy_func = &axc_db_session_destroy_store_ctx,
       .user_data = ctx_p
   };
-  axolotl_pre_key_store pre_key_store = {
+  signal_protocol_pre_key_store pre_key_store = {
       .load_pre_key = &axc_db_pre_key_load,
       .store_pre_key = &axc_db_pre_key_store,
       .contains_pre_key = &axc_db_pre_key_contains,
@@ -505,7 +477,7 @@ int axc_init(axc_context * ctx_p) {
       .destroy_func = &axc_db_pre_key_destroy_ctx,
       .user_data = ctx_p
   };
-  axolotl_signed_pre_key_store signed_pre_key_store = {
+  signal_protocol_signed_pre_key_store signed_pre_key_store = {
       .load_signed_pre_key = &axc_db_signed_pre_key_load,
       .store_signed_pre_key = &axc_db_signed_pre_key_store,
       .contains_signed_pre_key = &axc_db_signed_pre_key_contains,
@@ -513,7 +485,7 @@ int axc_init(axc_context * ctx_p) {
       .destroy_func = &axc_db_signed_pre_key_destroy_ctx,
       .user_data = ctx_p
   };
-  axolotl_identity_key_store identity_key_store = {
+  signal_protocol_identity_key_store identity_key_store = {
       .get_identity_key_pair = &axc_db_identity_get_key_pair,
       .get_local_registration_id = &axc_db_identity_get_local_registration_id,
       .save_identity = &axc_db_identity_save,
@@ -532,7 +504,7 @@ int axc_init(axc_context * ctx_p) {
 
   // axolotl lib init
   // 1. create global context
-  if (axolotl_context_create(&(ctx_p->axolotl_global_context_p), ctx_p)) {
+  if (signal_context_create(&(ctx_p->axolotl_global_context_p), ctx_p)) {
     err_msg = "failed to create global axolotl context";
     ret_val = -1;
     goto cleanup;
@@ -540,18 +512,21 @@ int axc_init(axc_context * ctx_p) {
   axc_log(ctx_p, AXC_LOG_DEBUG, "%s: created and set axolotl context", __func__);
 
   // 2. init and set crypto provider
-  axolotl_crypto_provider crypto_provider = {
+  signal_crypto_provider crypto_provider = {
       .random_func = random_bytes,
       .hmac_sha256_init_func = hmac_sha256_init,
       .hmac_sha256_update_func = hmac_sha256_update,
       .hmac_sha256_final_func = hmac_sha256_final,
       .hmac_sha256_cleanup_func = hmac_sha256_cleanup,
-      .sha512_digest_func = sha512_digest,
+      .sha512_digest_init_func = sha512_digest_init,
+      .sha512_digest_update_func = sha512_digest_update,
+      .sha512_digest_final_func = sha512_digest_final,
+      .sha512_digest_cleanup_func = sha512_digest_cleanup,
       .encrypt_func = aes_encrypt,
       .decrypt_func = aes_decrypt,
       .user_data = ctx_p
   };
-  if (axolotl_context_set_crypto_provider(ctx_p->axolotl_global_context_p, &crypto_provider)) {
+  if (signal_context_set_crypto_provider(ctx_p->axolotl_global_context_p, &crypto_provider)) {
     err_msg = "failed to set crypto provider";
     ret_val = -1;
     goto cleanup;
@@ -560,7 +535,7 @@ int axc_init(axc_context * ctx_p) {
 
   // 3. set locking functions
   #ifndef NO_THREADS
-  if (axolotl_context_set_locking_functions(ctx_p->axolotl_global_context_p, recursive_mutex_lock, recursive_mutex_unlock)) {
+  if (signal_context_set_locking_functions(ctx_p->axolotl_global_context_p, recursive_mutex_lock, recursive_mutex_unlock)) {
     err_msg = "failed to set locking functions";
     ret_val = -1;
     goto cleanup;
@@ -570,7 +545,7 @@ int axc_init(axc_context * ctx_p) {
 
   // init store context
 
-  if (axolotl_store_context_create(&store_context_p, ctx_p->axolotl_global_context_p)) {
+  if (signal_protocol_store_context_create(&store_context_p, ctx_p->axolotl_global_context_p)) {
     err_msg = "failed to create store context";
     ret_val = -1;
     goto cleanup;
@@ -578,25 +553,25 @@ int axc_init(axc_context * ctx_p) {
 
   axc_log(ctx_p, AXC_LOG_DEBUG, "%s: created store context", __func__);
 
-  if (axolotl_store_context_set_session_store(store_context_p, &session_store)) {
+  if (signal_protocol_store_context_set_session_store(store_context_p, &session_store)) {
     err_msg = "failed to create session store";
     ret_val = -1;
     goto cleanup;
   }
 
-  if (axolotl_store_context_set_pre_key_store(store_context_p, &pre_key_store)) {
+  if (signal_protocol_store_context_set_pre_key_store(store_context_p, &pre_key_store)) {
     err_msg = "failed to set pre key store";
     ret_val = -1;
     goto cleanup;
   }
 
-  if (axolotl_store_context_set_signed_pre_key_store(store_context_p, &signed_pre_key_store)) {
+  if (signal_protocol_store_context_set_signed_pre_key_store(store_context_p, &signed_pre_key_store)) {
     err_msg = "failed to set signed pre key store";
     ret_val = -1;
     goto cleanup;
   }
 
-  if (axolotl_store_context_set_identity_key_store(store_context_p, &identity_key_store)) {
+  if (signal_protocol_store_context_set_identity_key_store(store_context_p, &identity_key_store)) {
     err_msg = "failed to set identity key store";
     ret_val = -1;
     goto cleanup;
@@ -625,13 +600,13 @@ int axc_install(axc_context * ctx_p) {
   int ret_val = 0;
   int db_needs_init = 0;
 
-  axolotl_context * global_context_p = ctx_p->axolotl_global_context_p;
+  signal_context * global_context_p = ctx_p->axolotl_global_context_p;
   ratchet_identity_key_pair * identity_key_pair_p = (void *) 0;
-  axolotl_key_helper_pre_key_list_node * pre_keys_head_p = (void *) 0;
+  signal_protocol_key_helper_pre_key_list_node * pre_keys_head_p = (void *) 0;
   session_pre_key * last_resort_key_p = (void *) 0;
   session_signed_pre_key * signed_pre_key_p = (void *) 0;
-  axolotl_buffer * last_resort_key_buf_p = (void *) 0;
-  axolotl_buffer * signed_pre_key_data_p = (void *) 0;
+  signal_buffer * last_resort_key_buf_p = (void *) 0;
+  signal_buffer * signed_pre_key_data_p = (void *) 0;
   uint32_t registration_id;
 
   axc_log(ctx_p, AXC_LOG_INFO, "%s: calling install-time functions", __func__);
@@ -703,35 +678,35 @@ int axc_install(axc_context * ctx_p) {
       goto cleanup;
     }
 
-    ret_val = axolotl_key_helper_generate_identity_key_pair(&identity_key_pair_p, global_context_p);
+    ret_val = signal_protocol_key_helper_generate_identity_key_pair(&identity_key_pair_p, global_context_p);
     if (ret_val) {
       err_msg = "failed to generate the identity key pair";
       goto cleanup;
     }
     axc_log(ctx_p, AXC_LOG_DEBUG, "%s: generated identity key pair", __func__ );
 
-    ret_val = axolotl_key_helper_generate_registration_id(&registration_id, 1, global_context_p);
+    ret_val = signal_protocol_key_helper_generate_registration_id(&registration_id, 1, global_context_p);
     if (ret_val) {
       err_msg = "failed to generate registration id";
       goto cleanup;
     }
     axc_log(ctx_p, AXC_LOG_DEBUG, "%s: generated registration id: %i", __func__, registration_id);
 
-    ret_val = axolotl_key_helper_generate_pre_keys(&pre_keys_head_p, 1, AXC_PRE_KEYS_AMOUNT, global_context_p);
+    ret_val = signal_protocol_key_helper_generate_pre_keys(&pre_keys_head_p, 1, AXC_PRE_KEYS_AMOUNT, global_context_p);
     if(ret_val) {
       err_msg = "failed to generate pre keys";
       goto cleanup;
     }
     axc_log(ctx_p, AXC_LOG_DEBUG, "%s: generated pre keys", __func__ );
 
-    ret_val = axolotl_key_helper_generate_last_resort_pre_key(&last_resort_key_p, global_context_p);
+    ret_val = signal_protocol_key_helper_generate_last_resort_pre_key(&last_resort_key_p, global_context_p);
     if (ret_val) {
       err_msg = "failed to generate last resort pre key";
       goto cleanup;
     }
     axc_log(ctx_p, AXC_LOG_DEBUG, "%s: generated last resort pre key", __func__ );
 
-    ret_val = axolotl_key_helper_generate_signed_pre_key(&signed_pre_key_p, identity_key_pair_p, 0, g_get_real_time(), global_context_p);
+    ret_val = signal_protocol_key_helper_generate_signed_pre_key(&signed_pre_key_p, identity_key_pair_p, 0, g_get_real_time(), global_context_p);
     if (ret_val) {
       err_msg = "failed to generate signed pre key";
       goto cleanup;
@@ -767,7 +742,7 @@ int axc_install(axc_context * ctx_p) {
       goto cleanup;
     }
 
-    ret_val = axc_db_pre_key_store(session_pre_key_get_id(last_resort_key_p), axolotl_buffer_data(last_resort_key_buf_p), axolotl_buffer_len(last_resort_key_buf_p), ctx_p);
+    ret_val = axc_db_pre_key_store(session_pre_key_get_id(last_resort_key_p), signal_buffer_data(last_resort_key_buf_p), signal_buffer_len(last_resort_key_buf_p), ctx_p);
     if (ret_val) {
       err_msg = "failed to save last resort pre key";
       goto cleanup;
@@ -780,7 +755,7 @@ int axc_install(axc_context * ctx_p) {
       goto cleanup;
     }
 
-    ret_val = axc_db_signed_pre_key_store(session_signed_pre_key_get_id(signed_pre_key_p), axolotl_buffer_data(signed_pre_key_data_p), axolotl_buffer_len(signed_pre_key_data_p), ctx_p);
+    ret_val = axc_db_signed_pre_key_store(session_signed_pre_key_get_id(signed_pre_key_p), signal_buffer_data(signed_pre_key_data_p), signal_buffer_len(signed_pre_key_data_p), ctx_p);
     if (ret_val) {
       err_msg = "failed to save signed pre key";
       goto cleanup;
@@ -804,245 +779,19 @@ cleanup:
   }
 
   if (db_needs_init) {
-    AXOLOTL_UNREF(identity_key_pair_p);
-    axolotl_key_helper_key_list_free(pre_keys_head_p);
-    AXOLOTL_UNREF(last_resort_key_p);
-    AXOLOTL_UNREF(signed_pre_key_p);
-    axolotl_buffer_bzero_free(last_resort_key_buf_p);
-    axolotl_buffer_bzero_free(signed_pre_key_data_p);
+    SIGNAL_UNREF(identity_key_pair_p);
+    signal_protocol_key_helper_key_list_free(pre_keys_head_p);
+    SIGNAL_UNREF(last_resort_key_p);
+    SIGNAL_UNREF(signed_pre_key_p);
+    signal_buffer_bzero_free(last_resort_key_buf_p);
+    signal_buffer_bzero_free(signed_pre_key_data_p);
   }
 
   return ret_val;
 }
 
 int axc_get_device_id(axc_context * ctx_p, uint32_t * id_p) {
-  return axolotl_identity_get_local_registration_id(ctx_p->axolotl_store_context_p, id_p);
-}
-
-int axc_handshake_initiate(axc_address * recipient_addr_p, axc_context * ctx_p, axc_handshake ** handshake_init_pp) {
-  char * err_msg = "";
-  int ret_val = 0;
-
-  session_builder * session_builder_p = (void *) 0;
-  key_exchange_message * xchg_msg_p = (void *) 0;
-  axolotl_buffer * xchg_msg_data_p = (void *) 0;
-  axc_buf * xchg_msg_data_cpy_p = (void *) 0;
-  axc_handshake * hs_p = (void *) 0;
-
-  if (!ctx_p) {
-    fprintf(stderr, "%s: axc ctx is null!\n", __func__);
-    return -1;
-  }
-
-  axc_log(ctx_p, AXC_LOG_INFO, "%s: initiating synchronous handhshake", __func__ );
-
-  if (!recipient_addr_p) {
-    err_msg = "could not create handshake because address is a null pointer";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  if (!handshake_init_pp) {
-    err_msg = "could not create handshake because context is a null pointer";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  ret_val = session_builder_create(&session_builder_p, ctx_p->axolotl_store_context_p, recipient_addr_p, ctx_p->axolotl_global_context_p);
-  if (ret_val) {
-    err_msg = "failed to create session builder";
-    goto cleanup;
-  }
-  axc_log(ctx_p, AXC_LOG_DEBUG, "%s: created session builder", __func__ );
-
-  ret_val =  session_builder_process(session_builder_p, &xchg_msg_p);
-  if (ret_val) {
-    err_msg = "failed to create exchange message";
-    goto cleanup;
-  }
-  axc_log(ctx_p, AXC_LOG_DEBUG, "%s: created handshake init msg", __func__ );
-
-  xchg_msg_data_p = key_exchange_message_get_serialized(xchg_msg_p);
-  xchg_msg_data_cpy_p = axolotl_buffer_copy(xchg_msg_data_p);
-  if (!xchg_msg_data_cpy_p) {
-    err_msg = "failed to create handshake msg buffer";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  hs_p = axc_handshake_alloc(session_builder_p, xchg_msg_data_cpy_p);
-  if (!hs_p) {
-    axc_buf_free(xchg_msg_data_cpy_p);
-    err_msg = "failed to alloc handshake struct";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  *handshake_init_pp = hs_p;
-
-cleanup:
-  if (ret_val < 0) {
-    axc_log(ctx_p, AXC_LOG_ERROR, "%s: %s", __func__, err_msg);
-    session_builder_free(session_builder_p);
-    axolotl_buffer_free(xchg_msg_data_cpy_p);
-  }
-  AXOLOTL_UNREF(xchg_msg_p);
-  return ret_val;
-}
-
-int axc_handshake_accept(axc_buf * msg_data_p, axc_address * sender_addr_p, axc_context * ctx_p, axc_handshake ** handshake_response_pp) {
-  char * err_msg = "";
-  int ret_val = 0;
-
-  key_exchange_message * xchg_msg_p = (void *) 0;
-  key_exchange_message * xchg_resp_p = (void *) 0;
-  session_builder * session_builder_p = (void *) 0;
-  axc_buf * xchg_resp_cpy_p = (void *) 0;
-  axolotl_buffer * xchg_resp_data_p = (void *) 0;
-  axc_handshake * hs_p = (void *) 0;
-
-  if (!ctx_p) {
-    fprintf(stderr, "%s: axc ctx is null!\n", __func__);
-    return -1;
-  }
-
-  axc_log(ctx_p, AXC_LOG_INFO, "%s: accepting synchronous handshake message", __func__ );
-
-  if (!msg_data_p) {
-    err_msg = "could not accept handshake because message data is a null pointer";
-    ret_val = -1;
-    goto cleanup;
-  }
-  if (!sender_addr_p) {
-    err_msg = "could not accept handshake because address is a null pointer";
-    ret_val = -1;
-    goto cleanup;
-  }
-  if (!handshake_response_pp) {
-    err_msg = "could not accept handshake because handshake_pp is a null pointer";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  ret_val = key_exchange_message_deserialize(&xchg_msg_p, axc_buf_get_data(msg_data_p), axc_buf_get_len(msg_data_p), ctx_p->axolotl_global_context_p);
-  if (ret_val) {
-    err_msg = "failed to deserialize the axolotl key exchange message";
-    goto cleanup;
-  }
-  axc_log(ctx_p, AXC_LOG_DEBUG, "%s: deserialized key exchange message", __func__ );
-
-  ret_val = key_exchange_message_is_initiate(xchg_msg_p);
-  if (!ret_val) {
-    err_msg = "message is not a synchronous handshake initiation message";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  ret_val = session_builder_create(&session_builder_p, ctx_p->axolotl_store_context_p, sender_addr_p, ctx_p->axolotl_global_context_p);
-  if (ret_val) {
-    err_msg = "failed to create session builder";
-    goto cleanup;
-  }
-  axc_log(ctx_p, AXC_LOG_DEBUG, "%s: created session builder", __func__ );
-
-  ret_val = session_builder_process_key_exchange_message(session_builder_p, xchg_msg_p, &xchg_resp_p);
-  if (ret_val) {
-    err_msg = "failed to process axolotl key exchange message";
-    goto cleanup;
-  }
-  axc_log(ctx_p, AXC_LOG_DEBUG, "%s: processed key exchange message", __func__ );
-
-  if (!xchg_resp_p) {
-    err_msg = "could not accept handshake because the message needed no response";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  xchg_resp_data_p = key_exchange_message_get_serialized(xchg_resp_p);
-  xchg_resp_cpy_p = axolotl_buffer_copy(xchg_resp_data_p);
-  if (!xchg_resp_cpy_p) {
-    err_msg = "failed to allocate response message buffer";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  hs_p = axc_handshake_alloc(session_builder_p, xchg_resp_cpy_p);
-  if (!hs_p) {
-    err_msg = "failed to allocate handshake response struct";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  *handshake_response_pp = hs_p;
-
-cleanup:
-  if (ret_val < 0) {
-    axc_log(ctx_p, AXC_LOG_ERROR, "%s: %s", __func__, err_msg);
-    session_builder_free(session_builder_p);
-    axc_buf_free(xchg_resp_cpy_p);
-  }
-
-  AXOLOTL_UNREF(xchg_msg_p);
-  AXOLOTL_UNREF(xchg_resp_p);
-  return ret_val;
-}
-
-int axc_handshake_acknowledge(axc_buf * msg_data_p, axc_handshake * handshake_p, axc_context * ctx_p) {
-  int ret_val = 0;
-  char * err_msg = "";
-
-  key_exchange_message * xchg_msg_p = (void *) 0;
-  key_exchange_message * throw_away = (void *) 0;
-
-  if (!ctx_p) {
-    fprintf(stderr, "%s: axc ctx is null!\n", __func__);
-    return -1;
-  }
-
-  axc_log(ctx_p, AXC_LOG_INFO, "%s: acknowledging synchronous handshake", __func__ );
-
-  if (!msg_data_p) {
-    err_msg = "could not acknowledge handshake because msg data pointer is null";
-    ret_val = -1;
-    goto cleanup;
-  }
-  if (!handshake_p) {
-    err_msg = "could not acknowledge handshake because handshake pointer is null";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  ret_val = key_exchange_message_deserialize(&xchg_msg_p, axc_buf_get_data(msg_data_p), axc_buf_get_len(msg_data_p), ctx_p->axolotl_global_context_p);
-  if (ret_val) {
-    err_msg = "failed to deserialize message";
-    goto cleanup;
-  }
-  axc_log(ctx_p, AXC_LOG_DEBUG, "%s: deserialized key exchange message", __func__ );
-
-  if (!key_exchange_message_is_response(xchg_msg_p)){
-    err_msg = "message is not a handshake acknowledge message";
-    ret_val = -1;
-    goto cleanup;
-  }
-
-  // the last pointer cannot be null even if the message is not needed!
-  //TODO: maybe change this and make a pull request
-  ret_val = session_builder_process_key_exchange_message(handshake_p->session_builder_p, xchg_msg_p, &throw_away);
-  if (ret_val) {
-    err_msg = "failed to process handshake response message";
-    goto cleanup;
-  }
-
-  axc_log(ctx_p, AXC_LOG_DEBUG, "%s: acknowledged handshake", __func__ );
-
-cleanup:
-  if (ret_val < 0) {
-    axc_log(ctx_p, AXC_LOG_ERROR, "%s: %s", __func__, err_msg);
-  }
-
-  AXOLOTL_UNREF(xchg_msg_p);
-
-  return ret_val;
+  return signal_protocol_identity_get_local_registration_id(ctx_p->axolotl_store_context_p, id_p);
 }
 
 int axc_message_encrypt_and_serialize(axc_buf * msg_p, const axc_address * recipient_addr_p, axc_context * ctx_p, axc_buf ** ciphertext_pp) {
@@ -1051,7 +800,7 @@ int axc_message_encrypt_and_serialize(axc_buf * msg_p, const axc_address * recip
 
   session_cipher * cipher_p = (void *) 0;
   ciphertext_message * cipher_msg_p = (void *) 0;
-  axolotl_buffer * cipher_msg_data_p = (void *) 0;
+  signal_buffer * cipher_msg_data_p = (void *) 0;
   axc_buf * cipher_msg_data_cpy_p = (void *) 0;
 
   if (!ctx_p) {
@@ -1089,7 +838,7 @@ int axc_message_encrypt_and_serialize(axc_buf * msg_p, const axc_address * recip
   }
 
   cipher_msg_data_p = ciphertext_message_get_serialized(cipher_msg_p);
-  cipher_msg_data_cpy_p = axolotl_buffer_copy(cipher_msg_data_p);
+  cipher_msg_data_cpy_p = signal_buffer_copy(cipher_msg_data_p);
 
   if (!cipher_msg_data_cpy_p) {
     err_msg = "failed to copy cipher msg data";
@@ -1106,7 +855,7 @@ cleanup:
   }
 
   session_cipher_free(cipher_p);
-  AXOLOTL_UNREF(cipher_msg_p);
+  SIGNAL_UNREF(cipher_msg_p);
 
   return ret_val;
 }
@@ -1118,7 +867,7 @@ int axc_message_decrypt_from_serialized (axc_buf * msg_p, axc_address * sender_a
   //TODO: add session_cipher_set_decryption_callback maybe?
   //FIXME: check message type
 
-  whisper_message * ciphertext_p = (void *) 0;
+  signal_message * ciphertext_p = (void *) 0;
   session_cipher * cipher_p = (void *) 0;
   axc_buf * plaintext_buf_p = (void *) 0;
 
@@ -1149,12 +898,12 @@ int axc_message_decrypt_from_serialized (axc_buf * msg_p, axc_address * sender_a
     goto cleanup;
   }
 
-  ret_val = whisper_message_deserialize(&ciphertext_p, axc_buf_get_data(msg_p), axc_buf_get_len(msg_p), ctx_p->axolotl_global_context_p);
+  ret_val = signal_message_deserialize(&ciphertext_p, axc_buf_get_data(msg_p), axc_buf_get_len(msg_p), ctx_p->axolotl_global_context_p);
   if (ret_val) {
     err_msg = "failed to deserialize whisper msg";
     goto cleanup;
   }
-  ret_val = session_cipher_decrypt_whisper_message(cipher_p, ciphertext_p, (void *) 0, &plaintext_buf_p);
+  ret_val = session_cipher_decrypt_signal_message(cipher_p, ciphertext_p, (void *) 0, &plaintext_buf_p);
   if (ret_val) {
     err_msg = "failed to decrypt cipher message";
     goto cleanup;
@@ -1168,7 +917,7 @@ cleanup:
   }
 
   session_cipher_free(cipher_p);
-  AXOLOTL_UNREF(ciphertext_p);
+  SIGNAL_UNREF(ciphertext_p);
 
   return ret_val;
 }
@@ -1180,11 +929,11 @@ int axc_session_exists_initiated(const axc_address * addr_p, axc_context * ctx_p
   session_record * session_record_p = (void *) 0;
   session_state * session_state_p = (void *) 0;
 
-  if(!axolotl_session_contains_session(ctx_p->axolotl_store_context_p, addr_p)) {
+  if(!signal_protocol_session_contains_session(ctx_p->axolotl_store_context_p, addr_p)) {
     return 0;
   }
 
-  ret_val = axolotl_session_load_session(ctx_p->axolotl_store_context_p, &session_record_p, addr_p);
+  ret_val = signal_protocol_session_load_session(ctx_p->axolotl_store_context_p, &session_record_p, addr_p);
   if (ret_val){
     err_msg = "database error when trying to retrieve session";
     goto cleanup;
@@ -1204,7 +953,7 @@ cleanup:
     axc_log(ctx_p, AXC_LOG_ERROR, "%s: %s", __func__, err_msg);
   }
 
-  AXOLOTL_UNREF(session_record_p);
+  SIGNAL_UNREF(session_record_p);
   return ret_val;
 }
 
@@ -1218,17 +967,17 @@ cleanup:
 int axc_session_exists_any(const char * name, axc_context * ctx_p) {
   int ret_val = 0;
 
-  axolotl_int_list * sess_l_p = (void *) 0;
+  signal_int_list * sess_l_p = (void *) 0;
 
-  ret_val = axolotl_session_get_sub_device_sessions(ctx_p->axolotl_store_context_p, &sess_l_p, name, strlen(name));
+  ret_val = signal_protocol_session_get_sub_device_sessions(ctx_p->axolotl_store_context_p, &sess_l_p, name, strlen(name));
   if (ret_val < 0) {
     goto cleanup;
   }
 
-  ret_val = (axolotl_int_list_size(sess_l_p) > 0) ? 1 : 0;
+  ret_val = (signal_int_list_size(sess_l_p) > 0) ? 1 : 0;
 
 cleanup:
-  axolotl_int_list_free(sess_l_p);
+  signal_int_list_free(sess_l_p);
   return ret_val;
 }
 
@@ -1311,10 +1060,10 @@ cleanup:
     axc_log(ctx_p, AXC_LOG_ERROR, "%s: %s", __func__, err_msg);
   }
 
-  AXOLOTL_UNREF(pre_key_public_p);
-  AXOLOTL_UNREF(signed_pre_key_public_p);
-  AXOLOTL_UNREF(identity_key_public_p);
-  AXOLOTL_UNREF(bundle_p);
+  SIGNAL_UNREF(pre_key_public_p);
+  SIGNAL_UNREF(signed_pre_key_public_p);
+  SIGNAL_UNREF(identity_key_public_p);
+  SIGNAL_UNREF(bundle_p);
   session_builder_free(session_builder_p);
 
   return ret_val;
@@ -1324,7 +1073,7 @@ int axc_session_delete(const char * user, uint32_t device_id, axc_context * ctx_
   int ret_val = 0;
 
   axc_address addr = {.name = user, .name_len = strlen(user), .device_id = device_id};
-  ret_val = axolotl_session_delete_session(ctx_p->axolotl_store_context_p, &addr);
+  ret_val = signal_protocol_session_delete_session(ctx_p->axolotl_store_context_p, &addr);
   if (ret_val) {
     axc_log(ctx_p, AXC_LOG_ERROR, "%s: failed to delete session for %s:%i", __func__, user, device_id);
   }
@@ -1338,12 +1087,12 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
 
   session_builder * session_builder_p = (void *) 0;
   session_record * session_record_p = (void *) 0;
-  pre_key_whisper_message * pre_key_msg_p = (void *) 0;
+  pre_key_signal_message * pre_key_msg_p = (void *) 0;
   uint32_t new_id = 0;
   uint32_t pre_key_id = 0;
   session_cipher * session_cipher_p = (void *) 0;
   axc_buf * plaintext_p = (void *) 0;
-  axolotl_key_helper_pre_key_list_node * key_l_p = (void *) 0;
+  signal_protocol_key_helper_pre_key_list_node * key_l_p = (void *) 0;
 
 
   ret_val = session_builder_create(&session_builder_p, ctx_p->axolotl_store_context_p, remote_address_p, ctx_p->axolotl_global_context_p);
@@ -1353,22 +1102,22 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
   }
 
 
-  ret_val = axolotl_session_load_session(ctx_p->axolotl_store_context_p, &session_record_p, remote_address_p);
+  ret_val = signal_protocol_session_load_session(ctx_p->axolotl_store_context_p, &session_record_p, remote_address_p);
   if (ret_val) {
     err_msg = "failed to load or create session record";
     goto cleanup;
   }
 
 
-  ret_val = pre_key_whisper_message_deserialize(&pre_key_msg_p,
+  ret_val = pre_key_signal_message_deserialize(&pre_key_msg_p,
                                                 axc_buf_get_data(pre_key_msg_serialized_p),
                                                 axc_buf_get_len(pre_key_msg_serialized_p),
                                                 ctx_p->axolotl_global_context_p);
-  if (ret_val == AX_ERR_INVALID_PROTO_BUF) {
+  if (ret_val == SG_ERR_INVALID_PROTO_BUF) {
     err_msg = "not a pre key msg";
     ret_val = AXC_ERR_NOT_A_PREKEY_MSG;
     goto cleanup;
-  } else if (ret_val == AX_ERR_INVALID_KEY_ID) {
+  } else if (ret_val == SG_ERR_INVALID_KEY_ID) {
     ret_val = AXC_ERR_INVALID_KEY_ID;
     goto cleanup;
   } else if (ret_val) {
@@ -1384,7 +1133,7 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
 
 
   do {
-    ret_val = axolotl_key_helper_generate_pre_keys(&key_l_p, new_id, 1, ctx_p->axolotl_global_context_p);
+    ret_val = signal_protocol_key_helper_generate_pre_keys(&key_l_p, new_id, 1, ctx_p->axolotl_global_context_p);
     if (ret_val) {
       err_msg = "failed to generate a new key";
       goto cleanup;
@@ -1392,11 +1141,11 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
 
     new_id++;
 
-  } while (axolotl_pre_key_contains_key(ctx_p->axolotl_store_context_p, session_pre_key_get_id(axolotl_key_helper_key_list_element(key_l_p))));
+  } while (signal_protocol_pre_key_contains_key(ctx_p->axolotl_store_context_p, session_pre_key_get_id(signal_protocol_key_helper_key_list_element(key_l_p))));
 
 
 
-  ret_val = session_builder_process_pre_key_whisper_message(session_builder_p, session_record_p, pre_key_msg_p, &pre_key_id);
+  ret_val = session_builder_process_pre_key_signal_message(session_builder_p, session_record_p, pre_key_msg_p, &pre_key_id);
   if (ret_val < 0) {
     err_msg = "failed to process pre key message";
     goto cleanup;
@@ -1410,13 +1159,13 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
   }
 
   //FIXME: find a way to retain the key (for MAM catchup)
-  ret_val = session_cipher_decrypt_pre_key_whisper_message(session_cipher_p, pre_key_msg_p, (void *) 0, &plaintext_p);
+  ret_val = session_cipher_decrypt_pre_key_signal_message(session_cipher_p, pre_key_msg_p, (void *) 0, &plaintext_p);
   if (ret_val) {
     err_msg = "failed to decrypt message";
     goto cleanup;
   }
 
-  ret_val = axolotl_pre_key_store_key(ctx_p->axolotl_store_context_p, axolotl_key_helper_key_list_element(key_l_p));
+  ret_val = signal_protocol_pre_key_store_key(ctx_p->axolotl_store_context_p, signal_protocol_key_helper_key_list_element(key_l_p));
   if (ret_val) {
     err_msg = "failed to store new key";
     goto cleanup;
@@ -1429,11 +1178,11 @@ cleanup:
     axc_log(ctx_p, AXC_LOG_ERROR, "%s: %s", __func__, err_msg);
   }
 
-  AXOLOTL_UNREF(pre_key_msg_p);
-  AXOLOTL_UNREF(session_record_p);
-  AXOLOTL_UNREF(session_cipher_p);
+  SIGNAL_UNREF(pre_key_msg_p);
+  SIGNAL_UNREF(session_record_p);
+  SIGNAL_UNREF(session_cipher_p);
   session_builder_free(session_builder_p);
-  axolotl_key_helper_key_list_free(key_l_p);
+  signal_protocol_key_helper_key_list_free(key_l_p);
 
   return ret_val;
 }
@@ -1445,7 +1194,7 @@ int axc_key_load_public_own(axc_context * ctx_p, axc_buf ** pubkey_data_pp) {
   ratchet_identity_key_pair * kp_p = (void *) 0;
   axc_buf * key_data_p = (void *) 0;
 
-  ret_val = axolotl_identity_get_key_pair(ctx_p->axolotl_store_context_p, &kp_p);
+  ret_val = signal_protocol_identity_get_key_pair(ctx_p->axolotl_store_context_p, &kp_p);
   if (ret_val) {
     err_msg = "failed to load identity key pair";
     goto cleanup;
@@ -1465,7 +1214,7 @@ cleanup:
     axc_buf_free(key_data_p);
   }
 
-  AXOLOTL_UNREF(kp_p);
+  SIGNAL_UNREF(kp_p);
 
   return ret_val;
 }
@@ -1479,7 +1228,7 @@ int axc_key_load_public_addr(const char * name, uint32_t device_id, axc_context 
   axc_buf * key_data_p = (void *) 0;
   axc_address addr = {.name = name, .name_len = strlen(name), .device_id = device_id};
 
-  ret_val = axolotl_session_load_session(ctx_p->axolotl_store_context_p, &sr_p, &addr);
+  ret_val = signal_protocol_session_load_session(ctx_p->axolotl_store_context_p, &sr_p, &addr);
   if (ret_val) {
     err_msg = "failed to load session";
     goto cleanup;
@@ -1504,8 +1253,8 @@ cleanup:
     axc_buf_free(key_data_p);
   }
 
-  AXOLOTL_UNREF(sr_p);
-  AXOLOTL_UNREF(pubkey_p);
+  SIGNAL_UNREF(sr_p);
+  SIGNAL_UNREF(pubkey_p);
 
   return ret_val;
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "axolotl.h"
+#include "signal_protocol.h"
 #include "key_helper.h"
 
 #include "axc.h"
@@ -12,16 +12,16 @@
 #define AXC_DB_INITIALIZED 1
 
 // session store
-int axc_db_session_load(axolotl_buffer **record, const axolotl_address *address, void *user_data);
-int axc_db_session_get_sub_device_sessions(axolotl_int_list **sessions, const char *name, size_t name_len, void *user_data);
-int axc_db_session_store(const axolotl_address *address, uint8_t *record, size_t record_len, void *user_data);
-int axc_db_session_contains(const axolotl_address *address, void *user_data);
-int axc_db_session_delete(const axolotl_address *address, void *user_data);
+int axc_db_session_load(signal_buffer **record, const signal_protocol_address *address, void *user_data);
+int axc_db_session_get_sub_device_sessions(signal_int_list **sessions, const char *name, size_t name_len, void *user_data);
+int axc_db_session_store(const signal_protocol_address *address, uint8_t *record, size_t record_len, void *user_data);
+int axc_db_session_contains(const signal_protocol_address *address, void *user_data);
+int axc_db_session_delete(const signal_protocol_address *address, void *user_data);
 int axc_db_session_delete_all(const char *name, size_t name_len, void *user_data);
 void axc_db_session_destroy_store_ctx(void *user_data);
 
 // pre key store
-int axc_db_pre_key_load(axolotl_buffer **record, uint32_t pre_key_id, void *user_data);
+int axc_db_pre_key_load(signal_buffer **record, uint32_t pre_key_id, void *user_data);
 int axc_db_pre_key_store(uint32_t pre_key_id, uint8_t *record, size_t record_len, void *user_data);
 int axc_db_pre_key_contains(uint32_t pre_key_id, void *user_data);
 int axc_db_pre_key_remove(uint32_t pre_key_id, void *user_data);
@@ -32,7 +32,7 @@ void axc_db_pre_key_destroy_ctx(void *user_data);
  * @param pre_keys_head Pointer to the first element of the list.
  * @param user_data_p Optional. The user_data as received from the axolotl interface, will be used to set the database name.
  */
-int axc_db_pre_key_store_list(axolotl_key_helper_pre_key_list_node * pre_keys_head, axc_context * ctx_p);
+int axc_db_pre_key_store_list(signal_protocol_key_helper_pre_key_list_node * pre_keys_head, axc_context * ctx_p);
 
 /**
  * Gets the specified number of pre keys for publishing, i.e. only their public part.
@@ -64,18 +64,18 @@ int axc_db_pre_key_get_max_id(axc_context * ctx_p, uint32_t * max_id_p);
 int axc_db_pre_key_get_count(axc_context * ctx_p, size_t * count_p);
 
 // signed pre key store
-int axc_db_signed_pre_key_load(axolotl_buffer **record, uint32_t signed_pre_key_id, void *user_data);
+int axc_db_signed_pre_key_load(signal_buffer **record, uint32_t signed_pre_key_id, void *user_data);
 int axc_db_signed_pre_key_store(uint32_t signed_pre_key_id, uint8_t *record, size_t record_len, void *user_data);
 int axc_db_signed_pre_key_contains(uint32_t signed_pre_key_id, void *user_data);
 int axc_db_signed_pre_key_remove(uint32_t signed_pre_key_id, void *user_data);
 void axc_db_signed_pre_key_destroy_ctx(void *user_data);
 
 // identity key store
-int axc_db_identity_get_key_pair(axolotl_buffer **public_data, axolotl_buffer **private_data, void *user_data);
+int axc_db_identity_get_key_pair(signal_buffer **public_data, signal_buffer **private_data, void *user_data);
 int axc_db_identity_get_local_registration_id(void *user_data, uint32_t *registration_id);
-int axc_db_identity_save(const char *name, size_t name_len, uint8_t *key_data, size_t key_len, void *user_data);
+int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t *key_data, size_t key_len, void *user_data);
 int axc_db_identity_is_trusted(const char *name, size_t name_len, uint8_t *key_data, size_t key_len, void *user_data);
-int axc_db_identity_always_trusted(const char * name, size_t name_len, uint8_t * key_data, size_t key_len, void * user_data);
+int axc_db_identity_always_trusted(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len, void * user_data);
 void axc_db_identity_destroy_ctx(void *user_data);
 
 // additional helper functions

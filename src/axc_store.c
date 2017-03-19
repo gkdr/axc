@@ -3,7 +3,7 @@
 #include <stdlib.h> // exit
 #include <string.h> // strlen
 
-#include "axolotl.h"
+#include "signal_protocol.h"
 #include "key_helper.h"
 
 #include <sqlite3.h>
@@ -302,7 +302,7 @@ int axc_db_init_status_get(int * init_status_p, axc_context * axc_ctx_p) {
 }
 
 // session store impl
-int axc_db_session_load(axolotl_buffer ** record, const axolotl_address * address, void * user_data) {
+int axc_db_session_load(signal_buffer ** record, const signal_protocol_address * address, void * user_data) {
   const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME
                       " WHERE " SESSION_STORE_NAME_NAME " IS ?1"
                       " AND " SESSION_STORE_DEVICE_ID_NAME " IS ?2;";
@@ -330,7 +330,7 @@ int axc_db_session_load(axolotl_buffer ** record, const axolotl_address * addres
     return 0;
   } else if (step_result == SQLITE_ROW) {
     const int record_len = sqlite3_column_int(pstmt_p, 4);
-    *record = axolotl_buffer_create(sqlite3_column_blob(pstmt_p, 3), record_len);
+    *record = signal_buffer_create(sqlite3_column_blob(pstmt_p, 3), record_len);
 
     if (*record == 0) {
       db_conn_cleanup(db_p, pstmt_p, "Buffer could not be initialised", __func__, axc_ctx_p);
@@ -345,7 +345,7 @@ int axc_db_session_load(axolotl_buffer ** record, const axolotl_address * addres
   return 1;
 }
 
-int axc_db_session_get_sub_device_sessions(axolotl_int_list ** sessions, const char * name, size_t name_len, void * user_data) {
+int axc_db_session_get_sub_device_sessions(signal_int_list ** sessions, const char * name, size_t name_len, void * user_data) {
   const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME " WHERE " SESSION_STORE_NAME_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
@@ -353,7 +353,7 @@ int axc_db_session_get_sub_device_sessions(axolotl_int_list ** sessions, const c
   sqlite3_stmt * pstmt_p = (void *) 0;
   if (db_conn_open(&db_p, &pstmt_p, stmt, user_data)) return -1;
   
-  axolotl_int_list * session_list_p = (void *) 0;
+  signal_int_list * session_list_p = (void *) 0;
   char * err_msg = (void *) 0;
   int ret_val = 0;
 
@@ -363,11 +363,11 @@ int axc_db_session_get_sub_device_sessions(axolotl_int_list ** sessions, const c
     goto cleanup;
   }
   
-  session_list_p = axolotl_int_list_alloc();
+  session_list_p = signal_int_list_alloc();
 
   int step_result = sqlite3_step(pstmt_p);
   while (step_result == SQLITE_ROW) {
-    axolotl_int_list_push_back(session_list_p, sqlite3_column_int(pstmt_p, 2));
+    signal_int_list_push_back(session_list_p, sqlite3_column_int(pstmt_p, 2));
 
     step_result = sqlite3_step(pstmt_p);
   }
@@ -381,19 +381,19 @@ int axc_db_session_get_sub_device_sessions(axolotl_int_list ** sessions, const c
   (void)name_len;
 
   *sessions = session_list_p;
-  ret_val = axolotl_int_list_size(*sessions);
+  ret_val = signal_int_list_size(*sessions);
 
 cleanup:
   if (ret_val < 0) {
     if (session_list_p) {
-      axolotl_int_list_free(session_list_p);
+      signal_int_list_free(session_list_p);
     }
   }
   db_conn_cleanup(db_p, pstmt_p, err_msg, __func__, axc_ctx_p);
   return ret_val;
 }
 
-int axc_db_session_store(const axolotl_address * address, uint8_t * record, size_t record_len, void * user_data) {
+int axc_db_session_store(const signal_protocol_address * address, uint8_t * record, size_t record_len, void * user_data) {
   const char stmt[] = "INSERT OR REPLACE INTO " SESSION_STORE_TABLE_NAME " VALUES (:name, :name_len, :device_id, :session_record, :record_len);";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
@@ -428,7 +428,7 @@ int axc_db_session_store(const axolotl_address * address, uint8_t * record, size
   return 0;
 }
 
-int axc_db_session_contains(const axolotl_address * address, void * user_data) {
+int axc_db_session_contains(const signal_protocol_address * address, void * user_data) {
   const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME
                       " WHERE " SESSION_STORE_NAME_NAME " IS ?1"
                       " AND " SESSION_STORE_DEVICE_ID_NAME " IS ?2;";
@@ -464,7 +464,7 @@ int axc_db_session_contains(const axolotl_address * address, void * user_data) {
   }
 }
 
-int axc_db_session_delete(const axolotl_address * address, void * user_data) {
+int axc_db_session_delete(const signal_protocol_address * address, void * user_data) {
   const char stmt[] = "DELETE FROM " SESSION_STORE_TABLE_NAME
                       " WHERE " SESSION_STORE_NAME_NAME " IS ?1"
                       " AND " SESSION_STORE_DEVICE_ID_NAME " IS ?2;";
@@ -531,7 +531,7 @@ void axc_db_session_destroy_store_ctx(void * user_data) {
 }
 
 // pre key store impl
-int axc_db_pre_key_load(axolotl_buffer ** record, uint32_t pre_key_id, void * user_data) {
+int axc_db_pre_key_load(signal_buffer ** record, uint32_t pre_key_id, void * user_data) {
   const char stmt[] = "SELECT * FROM " PRE_KEY_STORE_TABLE_NAME " WHERE " PRE_KEY_STORE_ID_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
@@ -549,10 +549,10 @@ int axc_db_pre_key_load(axolotl_buffer ** record, uint32_t pre_key_id, void * us
   if (step_result == SQLITE_DONE) {
     // session not found
     db_conn_cleanup(db_p, pstmt_p, (void *) 0, __func__, axc_ctx_p);
-    return AX_ERR_INVALID_KEY_ID;
+    return SG_ERR_INVALID_KEY_ID;
   } else if (step_result == SQLITE_ROW) {
     const int record_len = sqlite3_column_int(pstmt_p, 2);
-    *record = axolotl_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
+    *record = signal_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
 
     if (*record == 0) {
       db_conn_cleanup(db_p, pstmt_p, "Buffer could not be initialised", __func__, axc_ctx_p);
@@ -564,7 +564,7 @@ int axc_db_pre_key_load(axolotl_buffer ** record, uint32_t pre_key_id, void * us
   }
 
   db_conn_cleanup(db_p, pstmt_p, (void *) 0, __func__, axc_ctx_p);
-  return AX_SUCCESS;
+  return SG_SUCCESS;
 }
 
 int axc_db_pre_key_store(uint32_t pre_key_id, uint8_t * record, size_t record_len, void * user_data) {
@@ -594,15 +594,15 @@ int axc_db_pre_key_store(uint32_t pre_key_id, uint8_t * record, size_t record_le
   return 0;
 }
 
-int axc_db_pre_key_store_list(axolotl_key_helper_pre_key_list_node * pre_keys_head, axc_context * axc_ctx_p) {
+int axc_db_pre_key_store_list(signal_protocol_key_helper_pre_key_list_node * pre_keys_head, axc_context * axc_ctx_p) {
   const char stmt_begin[] = "BEGIN TRANSACTION;";
   const char stmt[] = "INSERT OR REPLACE INTO " PRE_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3);";
   const char stmt_commit[] = "COMMIT TRANSACTION;";
 
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
-  axolotl_buffer * key_buf_p = (void *) 0;
-  axolotl_key_helper_pre_key_list_node * pre_keys_curr_p = (void *) 0;
+  signal_buffer * key_buf_p = (void *) 0;
+  signal_protocol_key_helper_pre_key_list_node * pre_keys_curr_p = (void *) 0;
   session_pre_key * pre_key_p = (void *) 0;
 
   if (db_conn_open(&db_p, &pstmt_p, stmt_begin, axc_ctx_p)) return -1;
@@ -622,7 +622,7 @@ int axc_db_pre_key_store_list(axolotl_key_helper_pre_key_list_node * pre_keys_he
 
   pre_keys_curr_p = pre_keys_head;
   while (pre_keys_curr_p) {
-    pre_key_p = axolotl_key_helper_key_list_element(pre_keys_curr_p);
+    pre_key_p = signal_protocol_key_helper_key_list_element(pre_keys_curr_p);
     if (session_pre_key_serialize(&key_buf_p, pre_key_p)) {
       db_conn_cleanup(db_p, pstmt_p, "failed to serialize pre key", __func__, axc_ctx_p);
       return -1;
@@ -632,11 +632,11 @@ int axc_db_pre_key_store_list(axolotl_key_helper_pre_key_list_node * pre_keys_he
       db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
       return -21;
     }
-    if (sqlite3_bind_blob(pstmt_p, 2, axolotl_buffer_data(key_buf_p), axolotl_buffer_len(key_buf_p), SQLITE_TRANSIENT)) {
+    if (sqlite3_bind_blob(pstmt_p, 2, signal_buffer_data(key_buf_p), signal_buffer_len(key_buf_p), SQLITE_TRANSIENT)) {
       db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
       return -22;
     }
-    if (sqlite3_bind_int(pstmt_p, 3, axolotl_buffer_len(key_buf_p))) {
+    if (sqlite3_bind_int(pstmt_p, 3, signal_buffer_len(key_buf_p))) {
       db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
       return -23;
     }
@@ -646,11 +646,11 @@ int axc_db_pre_key_store_list(axolotl_key_helper_pre_key_list_node * pre_keys_he
       return -3;
     }
 
-    axolotl_buffer_bzero_free(key_buf_p);
+    signal_buffer_bzero_free(key_buf_p);
     sqlite3_reset(pstmt_p);
     sqlite3_clear_bindings(pstmt_p);
 
-    pre_keys_curr_p = axolotl_key_helper_key_list_next(pre_keys_curr_p);
+    pre_keys_curr_p = signal_protocol_key_helper_key_list_next(pre_keys_curr_p);
   }
   sqlite3_finalize(pstmt_p);
 
@@ -707,7 +707,7 @@ int axc_db_pre_key_get_list(size_t amount, axc_context * axc_ctx_p, axc_buf_list
     key_id = sqlite3_column_int(pstmt_p, 0);
     record_len = sqlite3_column_int(pstmt_p, 2);
 
-    serialized_keypair_data_p = axolotl_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
+    serialized_keypair_data_p = signal_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
     if (!serialized_keypair_data_p) {
       err_msg = "failed to initialize buffer";
       ret_val = -3;
@@ -740,7 +740,7 @@ int axc_db_pre_key_get_list(size_t amount, axc_context * axc_ctx_p, axc_buf_list
 
     axc_buf_free(serialized_keypair_data_p);
 
-    AXOLOTL_UNREF(pre_key_p);
+    SIGNAL_UNREF(pre_key_p);
     pre_key_p = (void *) 0;
     ret_val = sqlite3_step(pstmt_p);
   }
@@ -756,7 +756,7 @@ int axc_db_pre_key_get_list(size_t amount, axc_context * axc_ctx_p, axc_buf_list
 cleanup:
   if (ret_val) {
     axc_buf_free(serialized_keypair_data_p);
-    AXOLOTL_UNREF(pre_key_p);
+    SIGNAL_UNREF(pre_key_p);
     axc_buf_free(pre_key_public_serialized_p);
     axc_buf_list_free(head_p);
   }
@@ -888,7 +888,7 @@ void axc_db_pre_key_destroy_ctx(void * user_data) {
 }
 
 // signed pre key store impl
-int axc_db_signed_pre_key_load(axolotl_buffer ** record, uint32_t signed_pre_key_id, void * user_data) {
+int axc_db_signed_pre_key_load(signal_buffer ** record, uint32_t signed_pre_key_id, void * user_data) {
   const char stmt[] = "SELECT * FROM " SIGNED_PRE_KEY_STORE_TABLE_NAME " WHERE " SIGNED_PRE_KEY_STORE_ID_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
@@ -906,10 +906,10 @@ int axc_db_signed_pre_key_load(axolotl_buffer ** record, uint32_t signed_pre_key
   if (step_result == SQLITE_DONE) {
     // session not found
     db_conn_cleanup(db_p, pstmt_p, (void *) 0, __func__, axc_ctx_p);
-    return AX_ERR_INVALID_KEY_ID;
+    return SG_ERR_INVALID_KEY_ID;
   } else if (step_result == SQLITE_ROW) {
     const int record_len = sqlite3_column_int(pstmt_p, 2);
-    *record = axolotl_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
+    *record = signal_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
 
     if (*record == 0) {
       db_conn_cleanup(db_p, pstmt_p, "Buffer could not be initialised", __func__, axc_ctx_p);
@@ -921,7 +921,7 @@ int axc_db_signed_pre_key_load(axolotl_buffer ** record, uint32_t signed_pre_key
   }
 
   db_conn_cleanup(db_p, pstmt_p, (void *) 0, __func__, axc_ctx_p);
-  return AX_SUCCESS;
+  return SG_SUCCESS;
 }
 
 int axc_db_signed_pre_key_store(uint32_t signed_pre_key_id, uint8_t * record, size_t record_len, void * user_data) {
@@ -1030,8 +1030,8 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
 
   char * err_msg = (void *) 0;
   int ret_val = 0;
-  axolotl_buffer * pubkey_buf_p = (void *) 0;
-  axolotl_buffer * privkey_buf_p = (void *) 0;
+  signal_buffer * pubkey_buf_p = (void *) 0;
+  signal_buffer * privkey_buf_p = (void *) 0;
   size_t pubkey_buf_len = 0;
   uint8_t * pubkey_buf_data_p = (void *) 0;
   size_t privkey_buf_len = 0;
@@ -1048,11 +1048,11 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
 
   if (ec_public_key_serialize(&pubkey_buf_p, ratchet_identity_key_pair_get_public(key_pair_p))) {
     err_msg = "Failed to allocate memory to serialize the public key";
-    ret_val = AX_ERR_NOMEM;
+    ret_val = SG_ERR_NOMEM;
     goto cleanup;
   }
-  pubkey_buf_len = axolotl_buffer_len(pubkey_buf_p);
-  pubkey_buf_data_p = axolotl_buffer_data(pubkey_buf_p);
+  pubkey_buf_len = signal_buffer_len(pubkey_buf_p);
+  pubkey_buf_data_p = signal_buffer_data(pubkey_buf_p);
 
   if (sqlite3_bind_blob(pstmt_p, 2, pubkey_buf_data_p, pubkey_buf_len, SQLITE_TRANSIENT)) {
     err_msg = "Failed to bind";
@@ -1100,11 +1100,11 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
 
   if (ec_private_key_serialize(&privkey_buf_p, ratchet_identity_key_pair_get_private(key_pair_p))) {
     err_msg = "Failed to allocate memory to serialize the private key";
-    ret_val = AX_ERR_NOMEM;
+    ret_val = SG_ERR_NOMEM;
     goto cleanup;
   }
-  privkey_buf_len = axolotl_buffer_len(privkey_buf_p);
-  privkey_buf_data_p = axolotl_buffer_data(privkey_buf_p);
+  privkey_buf_len = signal_buffer_len(privkey_buf_p);
+  privkey_buf_data_p = signal_buffer_data(privkey_buf_p);
 
   if (sqlite3_bind_blob(pstmt_p, 2, privkey_buf_data_p, privkey_buf_len, SQLITE_TRANSIENT)) {
     err_msg = "Failed to bind";
@@ -1138,17 +1138,17 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
 
 cleanup:
   if (pubkey_buf_p) {
-    axolotl_buffer_bzero_free(pubkey_buf_p);
+    signal_buffer_bzero_free(pubkey_buf_p);
   }
   if (privkey_buf_p) {
-    axolotl_buffer_bzero_free(privkey_buf_p);
+    signal_buffer_bzero_free(privkey_buf_p);
   }
   db_conn_cleanup(db_p, pstmt_p, err_msg, __func__, axc_ctx_p);
   return ret_val;
 }
 
 
-int axc_db_identity_get_key_pair(axolotl_buffer ** public_data, axolotl_buffer ** private_data, void * user_data) {
+int axc_db_identity_get_key_pair(signal_buffer ** public_data, signal_buffer ** private_data, void * user_data) {
   const char stmt[] = "SELECT * FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
@@ -1158,8 +1158,8 @@ int axc_db_identity_get_key_pair(axolotl_buffer ** public_data, axolotl_buffer *
 
   char * err_msg = (void *) 0;
   int ret_val = 0;
-  axolotl_buffer * pubkey_buf_p = (void *) 0;
-  axolotl_buffer * privkey_buf_p = (void *) 0;
+  signal_buffer * pubkey_buf_p = (void *) 0;
+  signal_buffer * privkey_buf_p = (void *) 0;
 
   // public key
   if (sqlite3_bind_text(pstmt_p, 1, OWN_PUBLIC_KEY_NAME, -1, SQLITE_STATIC)) {
@@ -1173,11 +1173,11 @@ int axc_db_identity_get_key_pair(axolotl_buffer ** public_data, axolotl_buffer *
   if (step_result == SQLITE_DONE) {
     // public key not found
     err_msg = "Own public key not found";
-    ret_val = AX_ERR_INVALID_KEY_ID;
+    ret_val = SG_ERR_INVALID_KEY_ID;
     goto cleanup;
   } else if (step_result == SQLITE_ROW) {
     pubkey_len = sqlite3_column_int(pstmt_p, 2);
-    pubkey_buf_p = axolotl_buffer_create(sqlite3_column_blob(pstmt_p, 1), pubkey_len);
+    pubkey_buf_p = signal_buffer_create(sqlite3_column_blob(pstmt_p, 1), pubkey_len);
 
     if (pubkey_buf_p == 0) {
       err_msg = "Buffer could not be initialised";
@@ -1205,11 +1205,11 @@ int axc_db_identity_get_key_pair(axolotl_buffer ** public_data, axolotl_buffer *
   if (step_result == SQLITE_DONE) {
     // private key not found
     err_msg = "Own private key not found";
-    ret_val = AX_ERR_INVALID_KEY_ID;
+    ret_val = SG_ERR_INVALID_KEY_ID;
     goto cleanup;
   } else if (step_result == SQLITE_ROW) {
     privkey_len = sqlite3_column_int(pstmt_p, 2);
-    privkey_buf_p = axolotl_buffer_create(sqlite3_column_blob(pstmt_p, 1), privkey_len);
+    privkey_buf_p = signal_buffer_create(sqlite3_column_blob(pstmt_p, 1), privkey_len);
 
     if (privkey_buf_p == 0) {
       err_msg = "Buffer could not be initialised";
@@ -1228,10 +1228,10 @@ int axc_db_identity_get_key_pair(axolotl_buffer ** public_data, axolotl_buffer *
 cleanup:
   if (ret_val < 0) {
     if (pubkey_buf_p) {
-      axolotl_buffer_bzero_free(pubkey_buf_p);
+      signal_buffer_bzero_free(pubkey_buf_p);
     }
     if (privkey_buf_p) {
-      axolotl_buffer_bzero_free(privkey_buf_p);
+      signal_buffer_bzero_free(privkey_buf_p);
     }
   }
   db_conn_cleanup(db_p, pstmt_p, err_msg, __func__, axc_ctx_p);
@@ -1272,7 +1272,7 @@ int axc_db_identity_get_local_registration_id(void * user_data, uint32_t * regis
   return 0;
 }
 
-int axc_db_identity_save(const char * name, size_t name_len, uint8_t * key_data, size_t key_len, void * user_data) {
+int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len, void * user_data) {
   // 1 - name ("public" or "private" for own keys, name for contacts)
   // 2 - key blob
   // 3 - length of the key
@@ -1292,7 +1292,7 @@ int axc_db_identity_save(const char * name, size_t name_len, uint8_t * key_data,
   sqlite3_stmt * pstmt_p = (void *) 0;
   if (db_conn_open(&db_p, &pstmt_p, stmt, user_data)) return -1;
 
-  if (sqlite3_bind_text(pstmt_p, 1, name, -1, SQLITE_TRANSIENT)) {
+  if (sqlite3_bind_text(pstmt_p, 1, addr_p->name, -1, SQLITE_TRANSIENT)) {
     db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
     return -21;
   }
@@ -1315,7 +1315,6 @@ int axc_db_identity_save(const char * name, size_t name_len, uint8_t * key_data,
   if (db_exec_single_change(db_p, pstmt_p, axc_ctx_p)) return -3;
 
   db_conn_cleanup(db_p, pstmt_p, (void *) 0, __func__, axc_ctx_p);
-  (void)name_len;
   return 0;
 }
 
@@ -1325,7 +1324,7 @@ int axc_db_identity_is_trusted(const char * name, size_t name_len, uint8_t * key
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
-  axolotl_buffer * key_record = (void *) 0;
+  signal_buffer * key_record = (void *) 0;
   int step_result = 0;
   size_t record_len = 0;
 
@@ -1350,18 +1349,18 @@ int axc_db_identity_is_trusted(const char * name, size_t name_len, uint8_t * key
       return 0;
     }
 
-    key_record = axolotl_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
+    key_record = signal_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
     if (key_record == 0) {
       db_conn_cleanup(db_p, pstmt_p, "Buffer could not be initialised", __func__, axc_ctx_p);
       return -3;
     }
 
-    if (memcmp(key_data, axolotl_buffer_data(key_record), key_len)) {
+    if (memcmp(key_data, signal_buffer_data(key_record), key_len)) {
       db_conn_cleanup(db_p, pstmt_p, "Key data does not match", __func__, axc_ctx_p);
     }
 
     db_conn_cleanup(db_p, pstmt_p, (void *) 0, __func__, axc_ctx_p);
-    axolotl_buffer_bzero_free(key_record);
+    signal_buffer_bzero_free(key_record);
     return 1;
   } else {
     db_conn_cleanup(db_p, pstmt_p, "Failed executing SQL statement", __func__, axc_ctx_p);
@@ -1371,9 +1370,8 @@ int axc_db_identity_is_trusted(const char * name, size_t name_len, uint8_t * key
   (void)name_len;
 }
 
-int axc_db_identity_always_trusted(const char * name, size_t name_len, uint8_t * key_data, size_t key_len, void * user_data) {
-  (void) name;
-  (void) name_len;
+int axc_db_identity_always_trusted(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len, void * user_data) {
+  (void) addr_p;
   (void) key_data;
   (void) key_len;
   (void) user_data;
