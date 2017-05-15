@@ -929,6 +929,9 @@ int axc_session_exists_initiated(const axc_address * addr_p, axc_context * ctx_p
   session_record * session_record_p = (void *) 0;
   session_state * session_state_p = (void *) 0;
 
+  //TODO: if there was no response yet, even though it is an established session it keeps sending prekeymsgs
+  //      maybe that is "uninitiated" too?
+
   if(!signal_protocol_session_contains_session(ctx_p->axolotl_store_context_p, addr_p)) {
     return 0;
   }

@@ -12,11 +12,11 @@ char * test_fn = "test/test.sqlite";
 char * a_fn = "test/a.sqlite";
 char * b_fn = "test/b.sqlite";
 
-axolotl_address addr_alice_42 = {.name = "alice", .name_len = 5, .device_id = 42};
-axolotl_address addr_alice_21 = {.name = "alice", .name_len = 5, .device_id = 21};
-axolotl_address addr_alice = {.name = "alice", .name_len = 5, .device_id = 0};
+signal_protocol_address addr_alice_42 = {.name = "alice", .name_len = 5, .device_id = 42};
+signal_protocol_address addr_alice_21 = {.name = "alice", .name_len = 5, .device_id = 21};
+signal_protocol_address addr_alice = {.name = "alice", .name_len = 5, .device_id = 0};
 
-axolotl_address addr_bob_12 = {.name = "bob", .name_len = 3, .device_id = 12};
+signal_protocol_address addr_bob_12 = {.name = "bob", .name_len = 3, .device_id = 12};
 axc_address addr_bob = {.name = "bob", .name_len = 3, .device_id = 0};
 
 axc_context * ctx_global_p;
@@ -116,6 +116,12 @@ int client_setup_sessions(void ** state) {
 
   axc_buf * pt_buf_p;
   assert_int_equal(axc_pre_key_message_process(ct_buf_p, &addr_alice, ctx_b_p, &pt_buf_p), 0);
+
+  axc_buf_free(ct_buf_p);
+  axc_buf_free(pt_buf_p);
+
+  assert_int_equal(axc_message_encrypt_and_serialize(msg_buf_p, &addr_alice, ctx_b_p, &ct_buf_p), 0);
+  assert_int_equal(axc_message_decrypt_from_serialized(ct_buf_p, &addr_bob, ctx_a_p, &pt_buf_p), 0);
 
   assert_int_equal(axc_session_exists_initiated(&addr_bob, ctx_a_p), 1);
   assert_int_equal(axc_session_exists_initiated(&addr_alice, ctx_b_p), 1);
@@ -268,133 +274,8 @@ void test_install_should_reset_if_needed(void **state) {
   assert_int_not_equal(reg_id_1, reg_id_2);
 }
 
-void test_handshake_alloc(void **state) {
-  (void) state;
-
-  session_builder * s_p = (session_builder *) 0xB16B00B5;
-  axc_buf * msg_p = (axc_buf *) 0xBADF3315;
-
-  axc_handshake * h_p = axc_handshake_alloc(s_p, msg_p);
-  assert_ptr_not_equal(h_p, (void *) 0);
-  assert_ptr_equal(h_p->session_builder_p, s_p);
-  assert_ptr_equal(h_p->handshake_msg_p, msg_p);
-}
-
-void test_handshake_initiate_no_nullpointers(void **state) {
-  (void) state;
-
-  assert_int_not_equal(axc_handshake_initiate((void *) 0, (void *) 0, (void *) 0), 0);
-  assert_int_not_equal(axc_handshake_initiate(&addr_bob_12, (void *) 0, (void *) 0), 0);
-  assert_int_not_equal(axc_handshake_initiate(&addr_bob_12, ctx_global_p, (void *) 0), 0);
-}
-
-void test_handshake_initiate(void **state) {
-  (void) state;
-
-  assert_int_equal(axc_install(ctx_global_p), 0);
-
-  axc_handshake * handshake_p = (void *) 0;
-  assert_int_equal(axc_handshake_initiate(&addr_bob_12, ctx_global_p, &handshake_p), 0);
-
-  assert_ptr_not_equal(handshake_p, (void *) 0);
-  assert_ptr_not_equal(handshake_p->session_builder_p, (void *) 0);
-  assert_ptr_not_equal(handshake_p->handshake_msg_p, (void *) 0);
-
-  key_exchange_message * k_xchg_p = (void *) 0;
-  assert_int_equal(key_exchange_message_deserialize(&k_xchg_p, axc_buf_get_data(handshake_p->handshake_msg_p), axc_buf_get_len(handshake_p->handshake_msg_p), ctx_global_p->axolotl_global_context_p), 0);
-  assert_int_not_equal(key_exchange_message_is_initiate(k_xchg_p), 0);
-
-  axc_handshake_destroy(handshake_p);
-  AXOLOTL_UNREF(k_xchg_p);
-}
-
-void test_handshake_accept_no_nullpointers(void **state) {
-  (void) state;
-
-  assert_int_equal(axc_install(ctx_global_p), 0);
-
-  axc_handshake * handshake_p = (void *) 0;
-  assert_int_equal(axc_handshake_initiate(&addr_bob_12, ctx_global_p, &handshake_p), 0);
-
-  assert_int_not_equal(axc_handshake_accept((void *) 0, (void *) 0, (void *) 0, (void *) 0), 0);
-  assert_int_not_equal(axc_handshake_accept(handshake_p->handshake_msg_p, (void *) 0, (void *) 0, (void *) 0), 0);
-  assert_int_not_equal(axc_handshake_accept(handshake_p->handshake_msg_p, &addr_bob_12, (void *) 0, (void *) 0), 0);
-  assert_int_not_equal(axc_handshake_accept(handshake_p->handshake_msg_p, &addr_bob_12, ctx_global_p, (void *) 0), 0);
-
-  axc_handshake_destroy(handshake_p);
-}
-
-void test_handshake_accept(void **state) {
-  (void) state;
-
-  assert_int_equal(axc_install(ctx_global_p), 0);
-
-  axc_handshake * handshake_recv_p = (void *) 0;
-  assert_int_equal(axc_handshake_initiate(&addr_bob_12, ctx_global_p, &handshake_recv_p), 0);
-
-  axc_handshake * handshake_send_p = (void *) 0;
-  assert_int_equal(axc_handshake_accept(handshake_recv_p->handshake_msg_p, &addr_bob_12, ctx_global_p, &handshake_send_p), 0);
-
-  key_exchange_message * xchg_msg_p = (void*) 0;
-  assert_int_equal(key_exchange_message_deserialize(&xchg_msg_p, axc_buf_get_data(handshake_send_p->handshake_msg_p), axc_buf_get_len(handshake_send_p->handshake_msg_p), ctx_global_p->axolotl_global_context_p), 0);
-  assert_int_not_equal(key_exchange_message_is_response_for_simultaneous_initiate(xchg_msg_p), 0);
-
-  assert_int_not_equal(axc_handshake_accept(handshake_send_p->handshake_msg_p, &addr_bob_12, ctx_global_p, &handshake_recv_p), 0);
-
-  AXOLOTL_UNREF(xchg_msg_p);
-  axc_handshake_destroy(handshake_send_p);
-  axc_handshake_destroy(handshake_recv_p);
-}
-
-void test_handshake_acknowledge_no_nullpointers(void **state) {
-  (void) state;
-
-  assert_int_equal(axc_install(ctx_global_p), 0);
-
-  axc_handshake * handshake_send_p = (void *) 0;
-  assert_int_equal(axc_handshake_initiate(&addr_bob_12, ctx_global_p, &handshake_send_p), 0);
-
-  axc_handshake * handshake_recv_p = (void *) 0;
-  assert_int_equal(axc_handshake_accept(handshake_send_p->handshake_msg_p, &addr_bob_12, ctx_global_p, &handshake_recv_p), 0);
-
-  assert_int_not_equal(axc_handshake_acknowledge((void *) 0, (void *) 0, (void *) 0), 0);
-  assert_int_not_equal(axc_handshake_acknowledge(handshake_recv_p->handshake_msg_p, (void *) 0, (void *) 0), 0);
-  assert_int_not_equal(axc_handshake_acknowledge(handshake_recv_p->handshake_msg_p, handshake_send_p, (void *) 0), 0);
-
-  axc_handshake_destroy(handshake_send_p);
-  axc_handshake_destroy(handshake_recv_p);
-}
-
-void test_handshake_acknowledge(void **state) {
-  (void) state;
-
-  axc_handshake * handshake_init_p = (void *) 0;
-  assert_int_equal(axc_handshake_initiate(&addr_bob_12, ctx_a_p, &handshake_init_p), 0);
-
-  axc_handshake * handshake_accept_p = (void *) 0;
-  assert_int_equal(axc_handshake_accept(handshake_init_p->handshake_msg_p, &addr_alice_21, ctx_b_p, &handshake_accept_p), 0);
-
-  assert_int_equal(axc_handshake_acknowledge(handshake_accept_p->handshake_msg_p, handshake_init_p, ctx_a_p), 0);
-  assert_int_not_equal(axc_handshake_acknowledge(handshake_init_p->handshake_msg_p, handshake_init_p, ctx_a_p), 0);
-  assert_int_not_equal(axc_handshake_acknowledge(handshake_init_p->handshake_msg_p, handshake_init_p, ctx_b_p), 0);
-
-  assert_int_equal(axc_session_exists_initiated(&addr_bob_12, ctx_a_p), 1);
-  assert_int_equal(axc_session_exists_initiated(&addr_alice_21, ctx_b_p), 1);
-
-  axc_handshake_destroy(handshake_accept_p);
-  axc_handshake_destroy(handshake_init_p);
-}
-
 void test_message_encrypt_decrypt(void **state) {
   (void) state;
-
-  axc_handshake * handshake_init_p = (void *) 0;
-  assert_int_equal(axc_handshake_initiate(&addr_bob_12, ctx_a_p, &handshake_init_p), 0);
-
-  axc_handshake * handshake_accept_p = (void *) 0;
-  assert_int_equal(axc_handshake_accept(handshake_init_p->handshake_msg_p, &addr_alice_21, ctx_b_p, &handshake_accept_p), 0);
-
-  assert_int_equal(axc_handshake_acknowledge(handshake_accept_p->handshake_msg_p, handshake_init_p, ctx_a_p), 0);
 
   axc_buf * msg_a1_p = axc_buf_create((uint8_t *) "hallo", 6);
   axc_buf * msg_a2_p = axc_buf_create((uint8_t *) "sup", 4);
@@ -408,29 +289,29 @@ void test_message_encrypt_decrypt(void **state) {
 
   axc_buf * ct_a1_p = (void *) 0;
   axc_buf * ct_a2_p = (void *) 0;
-  assert_int_equal(axc_message_encrypt_and_serialize(msg_a1_p, &addr_bob_12, ctx_a_p, &ct_a1_p), 0);
-  assert_int_equal(axc_message_encrypt_and_serialize(msg_a2_p, &addr_bob_12, ctx_a_p, &ct_a2_p), 0);
+  assert_int_equal(axc_message_encrypt_and_serialize(msg_a1_p, &addr_bob, ctx_a_p, &ct_a1_p), 0);
+  assert_int_equal(axc_message_encrypt_and_serialize(msg_a2_p, &addr_bob, ctx_a_p, &ct_a2_p), 0);
 
   axc_buf * pt_a1_p = (void *) 0;
   axc_buf * pt_a2_p = (void *) 0;
 
   assert_int_not_equal(axc_message_decrypt_from_serialized((void *) 0, (void *) 0, (void *) 0, (void *) 0), 0);
   assert_int_not_equal(axc_message_decrypt_from_serialized(ct_a1_p, (void *) 0, (void *) 0, (void *) 0), 0);
-  assert_int_not_equal(axc_message_decrypt_from_serialized(ct_a1_p, &addr_alice_21, (void *) 0, (void *) 0), 0);
-  assert_int_not_equal(axc_message_decrypt_from_serialized(ct_a1_p, &addr_alice_21, ctx_b_p, (void *) 0), 0);
+  assert_int_not_equal(axc_message_decrypt_from_serialized(ct_a1_p, &addr_alice, (void *) 0, (void *) 0), 0);
+  assert_int_not_equal(axc_message_decrypt_from_serialized(ct_a1_p, &addr_alice, ctx_b_p, (void *) 0), 0);
 
-  assert_int_equal(axc_message_decrypt_from_serialized(ct_a1_p, &addr_alice_21, ctx_b_p, &pt_a1_p), 0);
-  assert_int_equal(axc_message_decrypt_from_serialized(ct_a2_p, &addr_alice_21, ctx_b_p, &pt_a2_p), 0);
+  assert_int_equal(axc_message_decrypt_from_serialized(ct_a1_p, &addr_alice, ctx_b_p, &pt_a1_p), 0);
+  assert_int_equal(axc_message_decrypt_from_serialized(ct_a2_p, &addr_alice, ctx_b_p, &pt_a2_p), 0);
 
   axc_buf * ct_b1_p = (void *) 0;
   axc_buf * ct_b2_p = (void *) 0;
-  assert_int_equal(axc_message_encrypt_and_serialize(msg_b1_p, &addr_alice_21, ctx_b_p, &ct_b1_p), 0);
-  assert_int_equal(axc_message_encrypt_and_serialize(msg_b2_p, &addr_alice_21, ctx_b_p, &ct_b2_p), 0);
+  assert_int_equal(axc_message_encrypt_and_serialize(msg_b1_p, &addr_alice, ctx_b_p, &ct_b1_p), 0);
+  assert_int_equal(axc_message_encrypt_and_serialize(msg_b2_p, &addr_alice, ctx_b_p, &ct_b2_p), 0);
 
   axc_buf * pt_b1_p = (void *) 0;
   axc_buf * pt_b2_p = (void *) 0;
-  assert_int_equal(axc_message_decrypt_from_serialized(ct_b2_p, &addr_bob_12, ctx_a_p, &pt_b2_p), 0);
-  assert_int_equal(axc_message_decrypt_from_serialized(ct_b1_p, &addr_bob_12, ctx_a_p, &pt_b1_p), 0);
+  assert_int_equal(axc_message_decrypt_from_serialized(ct_b2_p, &addr_bob, ctx_a_p, &pt_b2_p), 0);
+  assert_int_equal(axc_message_decrypt_from_serialized(ct_b1_p, &addr_bob, ctx_a_p, &pt_b1_p), 0);
 
   assert_int_equal(axc_buf_get_len(msg_a1_p), axc_buf_get_len(pt_a1_p));
   assert_memory_equal(axc_buf_get_data(msg_a1_p), axc_buf_get_data(pt_a1_p), axc_buf_get_len(pt_a1_p));
@@ -443,9 +324,6 @@ void test_message_encrypt_decrypt(void **state) {
 
   assert_int_equal(axc_buf_get_len(msg_b2_p), axc_buf_get_len(pt_b2_p));
   assert_memory_equal(axc_buf_get_data(msg_b2_p), axc_buf_get_data(pt_b2_p), axc_buf_get_len(pt_b2_p));
-
-  axc_handshake_destroy(handshake_accept_p);
-  axc_handshake_destroy(handshake_init_p);
 
   axc_buf_free(msg_a1_p);
   axc_buf_free(msg_a2_p);
@@ -463,46 +341,46 @@ void test_message_encrypt_decrypt(void **state) {
   axc_buf_free(pt_b2_p);
 }
 
-void test_session_exists_initiated(void **state) {
-  (void) state;
-
-  assert_int_equal(axc_session_exists_initiated(&addr_bob_12, ctx_a_p), 0);
-  assert_int_equal(axc_session_exists_initiated(&addr_alice_21, ctx_b_p), 0);
-
-  axc_handshake * handshake_init_p = (void *) 0;
-  assert_int_equal(axc_handshake_initiate(&addr_bob_12, ctx_a_p, &handshake_init_p), 0);
-
-  assert_int_equal(axc_session_exists_initiated(&addr_bob_12, ctx_a_p), 0);
-
-  axc_handshake * handshake_accept_p = (void *) 0;
-  assert_int_equal(axc_handshake_accept(handshake_init_p->handshake_msg_p, &addr_alice_21, ctx_b_p, &handshake_accept_p), 0);
-
-  assert_int_equal(axc_session_exists_initiated(&addr_alice_21, ctx_b_p), 1);
-
-  assert_int_equal(axc_handshake_acknowledge(handshake_accept_p->handshake_msg_p, handshake_init_p, ctx_a_p), 0);
-
-  assert_int_equal(axc_session_exists_initiated(&addr_bob_12, ctx_a_p), 1);
-
-  axc_handshake_destroy(handshake_accept_p);
-  axc_handshake_destroy(handshake_init_p);
-}
-
 void test_session_exists_any(void ** state) {
   (void) state;
 
-  assert_int_equal(axc_session_exists_initiated(&addr_bob_12, ctx_a_p), 0);
-  assert_int_equal(axc_session_exists_any(addr_bob_12.name, ctx_a_p), 0);
+  assert_int_equal(axc_session_exists_initiated(&addr_bob, ctx_a_p), 0);
+  assert_int_equal(axc_session_exists_any(addr_bob.name, ctx_a_p), 0);
 
-  assert_int_equal(axc_session_exists_initiated(&addr_alice_21, ctx_b_p), 0);
-  assert_int_equal(axc_session_exists_any(addr_alice_21.name, ctx_b_p), 0);
+  assert_int_equal(axc_session_exists_initiated(&addr_alice, ctx_b_p), 0);
+  assert_int_equal(axc_session_exists_any(addr_alice.name, ctx_b_p), 0);
 
-  axc_handshake * handshake_init_p = (void *) 0;
-  assert_int_equal(axc_handshake_initiate(&addr_bob_12, ctx_a_p, &handshake_init_p), 0);
-  axc_handshake * handshake_accept_p = (void *) 0;
-  assert_int_equal(axc_handshake_accept(handshake_init_p->handshake_msg_p, &addr_alice_21, ctx_b_p, &handshake_accept_p), 0);
+  axc_bundle * bundle_bob_p;
+  assert_int_equal(axc_bundle_collect(AXC_PRE_KEYS_AMOUNT, ctx_b_p, &bundle_bob_p), 0);
+  addr_bob.device_id = bundle_bob_p->registration_id;
 
-  assert_int_equal(axc_session_exists_initiated(&addr_alice_21, ctx_b_p), 1);
-  assert_int_equal(axc_session_exists_any(addr_alice_21.name, ctx_b_p), 1);
+  assert_int_equal(axc_session_from_bundle(axc_buf_list_item_get_id(bundle_bob_p->pre_keys_head_p),
+                                            axc_buf_list_item_get_buf(bundle_bob_p->pre_keys_head_p),
+                                            bundle_bob_p->signed_pre_key_id,
+                                            bundle_bob_p->signed_pre_key_public_serialized_p,
+                                            bundle_bob_p->signed_pre_key_signature_p,
+                                            bundle_bob_p->identity_key_public_serialized_p,
+                                            &addr_bob,
+                                            ctx_a_p),
+                    0);
+
+  axc_buf * msg_buf_p = axc_buf_create("hello", strlen("hello") + 1);
+  assert_ptr_not_equal(msg_buf_p, (void *) 0);
+
+  axc_buf * ct_buf_p;
+  assert_int_equal(axc_message_encrypt_and_serialize(msg_buf_p, &addr_bob, ctx_a_p, &ct_buf_p), 0);
+
+  uint32_t alice_id;
+  assert_int_equal(axc_get_device_id(ctx_a_p, &alice_id), 0);
+
+  addr_alice.device_id = alice_id;
+
+  axc_buf * pt_buf_p;
+  assert_int_equal(axc_pre_key_message_process(ct_buf_p, &addr_alice, ctx_b_p, &pt_buf_p), 0);
+
+  assert_int_equal(axc_session_exists_initiated(&addr_alice, ctx_b_p), 1);
+  assert_int_equal(axc_session_exists_initiated(&addr_alice_42, ctx_b_p), 0);
+  assert_int_equal(axc_session_exists_any(addr_alice.name, ctx_b_p), 1);
 
 }
 
@@ -515,7 +393,7 @@ void test_session_from_bundle_and_handle_prekey_message(void **state) {
 
   uint32_t pre_key_id_bob = 10;
   session_pre_key * pre_key_bob_p = (void *) 0;
-  assert_int_equal(axolotl_pre_key_load_key(ctx_b_p->axolotl_store_context_p, &pre_key_bob_p, pre_key_id_bob), 0);
+  assert_int_equal(signal_protocol_pre_key_load_key(ctx_b_p->axolotl_store_context_p, &pre_key_bob_p, pre_key_id_bob), 0);
   ec_key_pair * pre_key_pair_p = session_pre_key_get_key_pair(pre_key_bob_p);
   ec_public_key * pre_key_public_p = ec_key_pair_get_public(pre_key_pair_p);
   axc_buf * pre_key_public_data_p = (void *) 0;
@@ -523,7 +401,7 @@ void test_session_from_bundle_and_handle_prekey_message(void **state) {
 
   uint32_t signed_pre_key_id_bob = 0;
   session_signed_pre_key * signed_pre_key_bob_p = (void *) 0;
-  assert_int_equal(axolotl_signed_pre_key_load_key(ctx_b_p->axolotl_store_context_p, &signed_pre_key_bob_p, signed_pre_key_id_bob), 0);
+  assert_int_equal(signal_protocol_signed_pre_key_load_key(ctx_b_p->axolotl_store_context_p, &signed_pre_key_bob_p, signed_pre_key_id_bob), 0);
   ec_key_pair * signed_pre_key_pair_p = session_signed_pre_key_get_key_pair(signed_pre_key_bob_p);
   ec_public_key * signed_pre_key_public_p = ec_key_pair_get_public(signed_pre_key_pair_p);
   axc_buf * signed_pre_key_public_data_p = (void *) 0;
@@ -679,7 +557,7 @@ void test_key_load_public_own(void ** state) {
   assert_int_equal(axc_key_load_public_own(ctx_global_p, &key_buf_p), 0);
 
   ratchet_identity_key_pair * kp_p;
-  assert_int_equal(axolotl_identity_get_key_pair(ctx_global_p->axolotl_store_context_p, &kp_p), 0);
+  assert_int_equal(signal_protocol_identity_get_key_pair(ctx_global_p->axolotl_store_context_p, &kp_p), 0);
 
   axc_buf * db_key_buf_p;
   assert_int_equal(ec_public_key_serialize(&db_key_buf_p, ratchet_identity_key_pair_get_public(kp_p)), 0);
@@ -699,7 +577,7 @@ void test_key_load_public_addr(void ** state) {
   assert_int_equal(axc_key_load_public_addr(addr_bob.name, addr_bob.device_id, ctx_a_p, &key_buf_p), 1);
 
   session_record * sr_p;
-  assert_int_equal(axolotl_session_load_session(ctx_a_p->axolotl_store_context_p, &sr_p, &addr_bob), 0);
+  assert_int_equal(signal_protocol_session_load_session(ctx_a_p->axolotl_store_context_p, &sr_p, &addr_bob), 0);
   assert_int_equal(session_record_is_fresh(sr_p), 0);
 
   axc_buf * db_key_buf_p;
@@ -708,7 +586,7 @@ void test_key_load_public_addr(void ** state) {
 
   axc_buf_free(key_buf_p);
   axc_buf_free(db_key_buf_p);
-  AXOLOTL_UNREF(sr_p);
+  SIGNAL_UNREF(sr_p);
 }
 
 
@@ -724,17 +602,8 @@ int main(void) {
       cmocka_unit_test_setup_teardown(test_install_should_not_do_anything_if_already_initialiased, client_setup, client_teardown),
       cmocka_unit_test_setup_teardown(test_install_should_reset_if_needed, client_setup, client_teardown),
 
-      cmocka_unit_test(test_handshake_alloc),
-      cmocka_unit_test_setup_teardown(test_handshake_initiate_no_nullpointers, client_setup, client_teardown),
-      cmocka_unit_test_setup_teardown(test_handshake_initiate, client_setup, client_teardown),
-      cmocka_unit_test_setup_teardown(test_handshake_accept, client_setup, client_teardown),
-      cmocka_unit_test_setup_teardown(test_handshake_accept_no_nullpointers, client_setup, client_teardown),
-      cmocka_unit_test_setup_teardown(test_handshake_acknowledge_no_nullpointers, client_setup, client_teardown),
-      cmocka_unit_test_setup_teardown(test_handshake_acknowledge, client_setup_two_dbs, client_teardown_two_dbs),
+      cmocka_unit_test_setup_teardown(test_message_encrypt_decrypt, client_setup_sessions, client_teardown_two_dbs),
 
-      cmocka_unit_test_setup_teardown(test_message_encrypt_decrypt, client_setup_two_dbs, client_teardown_two_dbs),
-
-      cmocka_unit_test_setup_teardown(test_session_exists_initiated, client_setup_two_dbs, client_teardown_two_dbs),
       cmocka_unit_test_setup_teardown(test_session_exists_any, client_setup_two_dbs, client_teardown_two_dbs),
       cmocka_unit_test_setup_teardown(test_session_exists_prekeys, client_setup_two_dbs, client_teardown_two_dbs),
 

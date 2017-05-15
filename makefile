@@ -34,7 +34,7 @@ CPPFLAGS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE
 TESTFLAGS=$(HEADERS) $(PKGCFG_C) -g -O0 --coverage
 PICFLAGS=-fPIC $(CFLAGS)
 LDFLAGS += -pthread -ldl $(PKGCFG_L) $(AX_PATH) -lm
-LDFLAGS_T= -lcmocka $(LFLAGS)
+LDFLAGS_T= -lcmocka $(LDFLAGS)
 
 all: $(BDIR)/libaxc.a
 
@@ -71,23 +71,19 @@ $(AX_PATH):
 		$(MAKE)
 
 .PHONY: test
-test: $(AX_PATH) test_store.o test_client.o
+test: $(AX_PATH) test_store test_client
 
-.PHONY: test_store.o
-test_store.o: $(SDIR)/axc_store.c $(SDIR)/axc_crypto.c $(TDIR)/test_store.c
-	$(CC) $(TESTFLAGS) -o $(TDIR)/$@  $(TDIR)/test_store.c $(SDIR)/axc_crypto.c $(LDFLAGS_T)
-	-$(TDIR)/$@
+.PHONY: test_store
+test_store: $(SDIR)/axc_store.c $(SDIR)/axc_crypto.c $(TDIR)/test_store.c
+	$(CC) $(TESTFLAGS) -o $(TDIR)/$@.o  $(TDIR)/test_store.c $(SDIR)/axc_crypto.c $(LDFLAGS_T)
+	-$(TDIR)/$@.o
 	mv *.g* $(TDIR)
 
-test_store: test_store.o
-
-.PHONY: test_client.o
-test_client.o: $(SDIR)/axc.c $(SDIR)/axc_crypto.c  $(SDIR)/axc_store.c $(TDIR)/test_client.c
-	$(CC) $(TESTFLAGS) -g $(HEADERS) -o $(TDIR)/$@ $(SDIR)/axc_crypto.c $(TDIR)/test_client.c $(LDFLAGS_T)
-	-$(TDIR)/$@
+.PHONY: test_client
+test_client: $(SDIR)/axc.c $(SDIR)/axc_crypto.c  $(SDIR)/axc_store.c $(TDIR)/test_client.c
+	$(CC) $(TESTFLAGS) -g $(HEADERS) -o $(TDIR)/$@.o $(SDIR)/axc_crypto.c $(TDIR)/test_client.c $(LDFLAGS_T)
+	-$(TDIR)/$@.o
 	mv *.g* $(TDIR)
-
-test_client: test_client.o
 
 .PHONY: coverage
 coverage: test
@@ -98,8 +94,11 @@ coverage: test
 
 .PHONY: clean
 clean:
-	rm -rf client $(BDIR) $(CDIR) $(AX_DIR)/build
 	rm -f $(TDIR)/*.o
 	rm -f $(TDIR)/*.gcno $(TDIR)/*.gcda $(TDIR)/*.sqlite
+	
+.PHONY: clean-all
+clean-all: clean
+	rm -rf client $(BDIR) $(CDIR) $(AX_DIR)/build
 
 
