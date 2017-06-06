@@ -156,7 +156,7 @@ void db_exec_quick(const char stmt[], void * user_data_p) {
 }
 
 int axc_db_create(axc_context * axc_ctx_p) {
-  const const char stmt[] =  "BEGIN TRANSACTION;"
+  const char stmt[] =  "BEGIN TRANSACTION;"
                              "CREATE TABLE IF NOT EXISTS " SESSION_STORE_TABLE_NAME "("
                                SESSION_STORE_NAME_NAME " TEXT NOT NULL, "
                                SESSION_STORE_NAME_LEN_NAME " INTEGER NOT NULL, "
