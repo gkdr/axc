@@ -2,13 +2,20 @@
 #
 CC ?= gcc
 AR ?= ar
-PKG_CONFIG ?= pkg-config
-LIBGCRYPT_CONFIG ?= libgcrypt-config
 MKDIR = mkdir
 MKDIR_P = mkdir -p
 CMAKE ?= cmake
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-fPIC
 
+PKG_CONFIG ?= pkg-config
+GLIB_CFLAGS ?= $(shell $(PKG_CONFIG) --cflags glib-2.0)
+GLIB_LDFLAGS ?= $(shell $(PKG_CONFIG) --libs glib-2.0)
+
+SQLITE3_CFLAGS ?= $(shell $(PKG_CONFIG) --cflags sqlite3)
+SQLITE3_LDFLAGS ?= $(shell $(PKG_CONFIG) --libs sqlite3)
+
+LIBGCRYPT_CONFIG ?= libgcrypt-config
+LIBGCRYPT_LDFLAGS ?= $(shell $(LIBGCRYPT_CONFIG) --libs)
 
 SDIR = src
 LDIR = lib
@@ -21,10 +28,13 @@ AX_DIR=./lib/libsignal-protocol-c
 AX_BDIR=$(AX_DIR)/build/src
 AX_PATH=$(AX_BDIR)/libsignal-protocol-c.a
 
-PKGCFG_C=$(shell $(PKG_CONFIG) --cflags sqlite3 glib-2.0) \
-		 $(shell $(LIBGCRYPT_CONFIG) --cflags)
-PKGCFG_L=$(shell $(PKG_CONFIG) --libs sqlite3 glib-2.0) \
-		 $(shell $(LIBGCRYPT_CONFIG) --libs)
+PKGCFG_C=$(GLIB_CFLAGS) \
+	 $(SQLITE3_CFLAGS) \
+	 $(LIBGCRYPT_CFLAGS)
+
+PKGCFG_L=$(GLIB_LDFLAGS) \
+	 $(SQLITE3_LDFLAGS) \
+	 $(LIBGCRYPT_LDFLAGS)
 
 HEADERS=-I$(AX_DIR)/src
 CFLAGS += $(HEADERS) $(PKGCFG_C) -std=c11 -Wall -Wextra -Wpedantic \
