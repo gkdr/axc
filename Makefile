@@ -37,7 +37,7 @@ PKGCFG_L=$(GLIB_LDFLAGS) \
 	 $(LIBGCRYPT_LDFLAGS)
 
 HEADERS=-I$(AX_DIR)/src
-CFLAGS += $(HEADERS) $(PKGCFG_C) -std=c11 -Wall -Wextra -Wpedantic \
+CFLAGS += $(HEADERS) $(PKGCFG_C) -std=c11 -g -Wall -Wextra -Wpedantic \
 		  -Wstrict-overflow -fno-strict-aliasing -funsigned-char \
 		  -fno-builtin-memset
 CPPFLAGS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE
