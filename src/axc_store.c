@@ -302,10 +302,12 @@ int axc_db_init_status_get(int * init_status_p, axc_context * axc_ctx_p) {
 }
 
 // session store impl
-int axc_db_session_load(signal_buffer ** record, const signal_protocol_address * address, void * user_data) {
+int axc_db_session_load(signal_buffer ** record, signal_buffer ** user_record, const signal_protocol_address * address, void * user_data) {
   const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME
                       " WHERE " SESSION_STORE_NAME_NAME " IS ?1"
                       " AND " SESSION_STORE_DEVICE_ID_NAME " IS ?2;";
+
+  (void) user_record;
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -378,7 +380,7 @@ int axc_db_session_get_sub_device_sessions(signal_int_list ** sessions, const ch
     goto cleanup;
   }
 
-  (void)name_len;
+  (void) name_len;
 
   *sessions = session_list_p;
   ret_val = signal_int_list_size(*sessions);
@@ -393,8 +395,11 @@ cleanup:
   return ret_val;
 }
 
-int axc_db_session_store(const signal_protocol_address * address, uint8_t * record, size_t record_len, void * user_data) {
+int axc_db_session_store(const signal_protocol_address *address, uint8_t *record, size_t record_len, uint8_t *user_record, size_t user_record_len, void *user_data) {
   const char stmt[] = "INSERT OR REPLACE INTO " SESSION_STORE_TABLE_NAME " VALUES (:name, :name_len, :device_id, :session_record, :record_len);";
+
+  (void) user_record;
+  (void) user_record_len;
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;

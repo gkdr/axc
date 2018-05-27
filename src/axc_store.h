@@ -5,16 +5,17 @@
 
 #include "axc.h"
 
-// For docs see axolotl.h
+// For docs see signal_protocol.h
+// Function signatures implementing their interfaces intentionally left in their code style.
 
 #define AXC_DB_NOT_INITIALIZED (-1)
-#define AXC_DB_NEEDS_ROLLBACK 0
-#define AXC_DB_INITIALIZED 1
+#define AXC_DB_NEEDS_ROLLBACK    0
+#define AXC_DB_INITIALIZED       1
 
 // session store
-int axc_db_session_load(signal_buffer **record, const signal_protocol_address *address, void *user_data);
+int axc_db_session_load(signal_buffer **record, signal_buffer **user_record, const signal_protocol_address *address, void *user_data);
 int axc_db_session_get_sub_device_sessions(signal_int_list **sessions, const char *name, size_t name_len, void *user_data);
-int axc_db_session_store(const signal_protocol_address *address, uint8_t *record, size_t record_len, void *user_data);
+int axc_db_session_store(const signal_protocol_address *address, uint8_t *record, size_t record_len, uint8_t *user_record, size_t user_record_len, void *user_data);
 int axc_db_session_contains(const signal_protocol_address *address, void *user_data);
 int axc_db_session_delete(const signal_protocol_address *address, void *user_data);
 int axc_db_session_delete_all(const char *name, size_t name_len, void *user_data);

@@ -323,7 +323,7 @@ void test_db_init_status_get_should_work(void **state) {
 void test_db_session_store_should_work(void **state) {
   (void) state;
 
-  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, ctx_global_p), 0);
+  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, (void *) 0, 0, ctx_global_p), 0);
 
   assert_int_equal(db_conn_open(&db_p, &pstmt_p, "SELECT * FROM session_store WHERE name='alice' AND device_id IS 42;", ctx_global_p), 0);
   assert_int_equal(sqlite3_step(pstmt_p), SQLITE_ROW);
@@ -339,10 +339,10 @@ void test_db_session_store_should_work(void **state) {
 void test_db_session_load_should_find_session(void **state) {
   (void) state;
 
-  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, ctx_global_p), 0);
+  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, (void *) 0, 0, ctx_global_p), 0);
 
   signal_buffer * buf = (void *) 0;
-  assert_int_equal(axc_db_session_load(&buf, &addr_alice_42, ctx_global_p), 1);
+  assert_int_equal(axc_db_session_load(&buf, (void *) 0, &addr_alice_42, ctx_global_p), 1);
   assert_memory_equal(signal_buffer_data(buf), bytes_1, bytes_1_len);
   assert_int_equal(signal_buffer_len(buf), bytes_1_len);
 }
@@ -351,14 +351,14 @@ void test_db_session_load_should_not_find_session(void **state) {
   (void) state;
 
   signal_buffer * buf = (void *) 0;
-  assert_int_equal(axc_db_session_load(&buf, &addr_alice_42, ctx_global_p), 0);
+  assert_int_equal(axc_db_session_load(&buf, (void *) 0, &addr_alice_42, ctx_global_p), 0);
 }
 
 void test_db_session_get_sub_device_sessions_should_find_and_return_correct_number(void **state) {
   (void) state;
 
-  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, ctx_global_p), 0);
-  assert_int_equal(axc_db_session_store(&addr_alice_21, bytes_2, bytes_2_len, ctx_global_p), 0);
+  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, (void *) 0, 0, ctx_global_p), 0);
+  assert_int_equal(axc_db_session_store(&addr_alice_21, bytes_2, bytes_2_len, (void *) 0, 0, ctx_global_p), 0);
 
   signal_int_list * list_a = (void *) 0;
   assert_int_equal(axc_db_session_get_sub_device_sessions(&list_a, addr_alice_42.name, addr_alice_42.name_len, ctx_global_p), 2);
@@ -443,7 +443,7 @@ void test_db_session_delete_should_return_correct_values(void **state) {
   (void) state;
 
   assert_int_equal(axc_db_session_delete(&addr_alice_21, ctx_global_p), 0);
-  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, ctx_global_p), 0);
+  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, (void *) 0, 0, ctx_global_p), 0);
   assert_int_equal(axc_db_session_delete(&addr_alice_42, ctx_global_p), 1);
 }
 
@@ -452,8 +452,8 @@ void test_db_session_delete_all_should_return_correct_values(void **state) {
 
   signal_int_list * sessions = (void *) 0;
 
-  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, ctx_global_p), 0);
-  assert_int_equal(axc_db_session_store(&addr_alice_21, bytes_2, bytes_2_len, ctx_global_p), 0);
+  assert_int_equal(axc_db_session_store(&addr_alice_42, bytes_1, bytes_1_len, (void *) 0, 0, ctx_global_p), 0);
+  assert_int_equal(axc_db_session_store(&addr_alice_21, bytes_2, bytes_2_len, (void *) 0, 0, ctx_global_p), 0);
   assert_int_equal(axc_db_session_get_sub_device_sessions(&sessions, addr_alice_42.name, addr_alice_42.name_len, ctx_global_p), 2);
 
   assert_int_equal(axc_db_session_delete_all(addr_alice_42.name, addr_alice_42.name_len, ctx_global_p), 2);
@@ -580,7 +580,7 @@ void test_db_pre_key_get_max_id(void ** state) {
 
 
   assert_int_equal(axc_db_pre_key_get_max_id(ctx_global_p, &id), 0);
-  assert_int_equal(id, AXC_PRE_KEYS_AMOUNT);
+  assert_int_equal(id, AXC_PRE_KEYS_AMOUNT - 1); // ids start with 0
 }
 
 void test_db_signed_pre_key_store_should_work(void **state) {

@@ -223,7 +223,7 @@ void test_install_should_generate_necessary_data(void **state) {
   assert_int_not_equal(sprintf(stmt, "SELECT count(*) FROM pre_key_store;"), 0);
   assert_int_equal(sqlite3_prepare_v2(db_p, stmt, -1, &pstmt_p, (void *) 0), SQLITE_OK);
   assert_int_equal(sqlite3_step(pstmt_p), SQLITE_ROW);
-  assert_int_equal(sqlite3_column_int(pstmt_p, 0), AXC_PRE_KEYS_AMOUNT + 1); // + last resort key
+  assert_int_equal(sqlite3_column_int(pstmt_p, 0), AXC_PRE_KEYS_AMOUNT);
   assert_int_equal(sqlite3_finalize(pstmt_p), SQLITE_OK);
 
   assert_int_not_equal(sprintf(stmt, "SELECT count(*) FROM signed_pre_key_store;"), 0);
@@ -235,9 +235,8 @@ void test_install_should_generate_necessary_data(void **state) {
   assert_int_equal(sqlite3_close(db_p), SQLITE_OK);
 
   int result = 0;
-  //FIXME: make init status constants
   assert_int_equal(axc_db_init_status_get(&result, ctx_global_p), 0);
-  assert_int_equal(result, 1);
+  assert_int_equal(result, AXC_DB_INITIALIZED);
 }
 
 void test_install_should_not_do_anything_if_already_initialiased(void **state) {
@@ -436,9 +435,9 @@ void test_session_from_bundle_and_handle_prekey_message(void **state) {
   size_t pre_keys_count_bob = 0;
   uint32_t max_id_bob = 0;
   assert_int_equal(axc_db_pre_key_get_count(ctx_b_p, &pre_keys_count_bob), 0);
-  assert_int_equal(pre_keys_count_bob, AXC_PRE_KEYS_AMOUNT + 1);
+  assert_int_equal(pre_keys_count_bob, AXC_PRE_KEYS_AMOUNT);
   assert_int_equal(axc_db_pre_key_get_max_id(ctx_b_p, &max_id_bob), 0);
-  assert_int_equal(max_id_bob, AXC_PRE_KEYS_AMOUNT);
+  assert_int_equal(max_id_bob, AXC_PRE_KEYS_AMOUNT - 1);
 
   axc_buf * test_msg_decrypted_p = (void *) 0;
   assert_int_equal(axc_pre_key_message_process(test_msg_ct_p, &addr_alice_21, ctx_b_p, &test_msg_decrypted_p), 0);
@@ -447,9 +446,9 @@ void test_session_from_bundle_and_handle_prekey_message(void **state) {
 
   assert_int_equal(axc_db_pre_key_contains(pre_key_id_bob, ctx_b_p), 0);
   assert_int_equal(axc_db_pre_key_get_count(ctx_b_p, &pre_keys_count_bob), 0);
-  assert_int_equal(pre_keys_count_bob, AXC_PRE_KEYS_AMOUNT + 1);
+  assert_int_equal(pre_keys_count_bob, AXC_PRE_KEYS_AMOUNT);
   assert_int_equal(axc_db_pre_key_get_max_id(ctx_b_p, &max_id_bob), 0);
-  assert_int_equal(max_id_bob, AXC_PRE_KEYS_AMOUNT + 1);
+  assert_int_equal(max_id_bob, AXC_PRE_KEYS_AMOUNT);
 }
 
 void test_bundle_collect(void ** state) {

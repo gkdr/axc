@@ -603,9 +603,7 @@ int axc_install(axc_context * ctx_p) {
   signal_context * global_context_p = ctx_p->axolotl_global_context_p;
   ratchet_identity_key_pair * identity_key_pair_p = (void *) 0;
   signal_protocol_key_helper_pre_key_list_node * pre_keys_head_p = (void *) 0;
-  session_pre_key * last_resort_key_p = (void *) 0;
   session_signed_pre_key * signed_pre_key_p = (void *) 0;
-  signal_buffer * last_resort_key_buf_p = (void *) 0;
   signal_buffer * signed_pre_key_data_p = (void *) 0;
   uint32_t registration_id;
 
@@ -699,13 +697,6 @@ int axc_install(axc_context * ctx_p) {
     }
     axc_log(ctx_p, AXC_LOG_DEBUG, "%s: generated pre keys", __func__ );
 
-    ret_val = signal_protocol_key_helper_generate_last_resort_pre_key(&last_resort_key_p, global_context_p);
-    if (ret_val) {
-      err_msg = "failed to generate last resort pre key";
-      goto cleanup;
-    }
-    axc_log(ctx_p, AXC_LOG_DEBUG, "%s: generated last resort pre key", __func__ );
-
     ret_val = signal_protocol_key_helper_generate_signed_pre_key(&signed_pre_key_p, identity_key_pair_p, 0, g_get_real_time(), global_context_p);
     if (ret_val) {
       err_msg = "failed to generate signed pre key";
@@ -734,20 +725,6 @@ int axc_install(axc_context * ctx_p) {
       goto cleanup;
     }
     axc_log(ctx_p, AXC_LOG_DEBUG, "%s: saved pre keys", __func__ );
-
-
-    ret_val = session_pre_key_serialize(&last_resort_key_buf_p, last_resort_key_p);
-    if (ret_val) {
-      err_msg = "failed to serialize last resort pre key";
-      goto cleanup;
-    }
-
-    ret_val = axc_db_pre_key_store(session_pre_key_get_id(last_resort_key_p), signal_buffer_data(last_resort_key_buf_p), signal_buffer_len(last_resort_key_buf_p), ctx_p);
-    if (ret_val) {
-      err_msg = "failed to save last resort pre key";
-      goto cleanup;
-    }
-    axc_log(ctx_p, AXC_LOG_DEBUG, "%s: saved last resort pre key", __func__ );
 
     ret_val = session_signed_pre_key_serialize(&signed_pre_key_data_p, signed_pre_key_p);
     if (ret_val) {
@@ -781,9 +758,7 @@ cleanup:
   if (db_needs_init) {
     SIGNAL_UNREF(identity_key_pair_p);
     signal_protocol_key_helper_key_list_free(pre_keys_head_p);
-    SIGNAL_UNREF(last_resort_key_p);
     SIGNAL_UNREF(signed_pre_key_p);
-    signal_buffer_bzero_free(last_resort_key_buf_p);
     signal_buffer_bzero_free(signed_pre_key_data_p);
   }
 
