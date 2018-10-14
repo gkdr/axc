@@ -98,6 +98,7 @@ static int db_conn_open(sqlite3 ** db_pp, sqlite3_stmt ** pstmt_pp, const char s
 
 
   if (sqlite3_prepare_v2(db_p, stmt, -1, &pstmt_p, (void *) 0)) {
+    ret_val = -2;
     err_msg = "Failed to prepare statement";
     goto cleanup;
   }
