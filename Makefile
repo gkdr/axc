@@ -40,7 +40,7 @@ HEADERS=-I$(AX_DIR)/src
 CFLAGS += $(HEADERS) $(PKGCFG_C) -std=c11 -g -Wall -Wextra -Wpedantic \
 		  -Wstrict-overflow -fno-strict-aliasing -funsigned-char \
 		  -fno-builtin-memset
-CPPFLAGS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE
+CPPFLAGS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -D_DEFAULT_SOURCE
 TESTFLAGS=$(HEADERS) $(PKGCFG_C) -g -O0 --coverage
 PICFLAGS=-fPIC $(CFLAGS)
 LDFLAGS += -pthread -ldl $(PKGCFG_L) $(AX_PATH) -lm
