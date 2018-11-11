@@ -5,7 +5,6 @@
 #include "signal_protocol.h"
 
 typedef struct axc_context axc_context;
-typedef struct axc_handshake axc_handshake;
 typedef struct axc_bundle axc_bundle;
 typedef struct axc_buf_list_item axc_buf_list_item;
 
@@ -125,56 +124,6 @@ uint8_t * axc_buf_get_data(axc_buf * buf);
 size_t axc_buf_get_len(axc_buf * buf);
 void axc_buf_free(axc_buf * buf);
 
-axc_buf * axc_handshake_get_data(axc_handshake * handshake_p);
-
-/**
- * Generates the message that is needed to initiate a session synchronously, which internally is axolotl's key_exchange_message.
- * The returned axc_handshake has to be kept and given to axc_handshake_acknowledge(), together with the received response.
- * At the end, it should be freed by calling axc_handshake_destroy().
- *
- * The whole key exchange process looks like this:
- * A initiate
- * A -> B
- * B accept
- * B -> A
- * A acknowledge
- *
- * @param recipient_addr_p The address of the recipient.
- * @param ctx_p The client context.
- * @param handshake_pp The handshake struct to keep for the next steps.
- * @return 0 on success, negative on error
- */
-int axc_handshake_initiate(axc_address * recipient_addr_p, axc_context * ctx_p, axc_handshake ** handshake_init_pp);
-
-/**
- * Second step of the session establishment, is called by the recipient.
- *
- * @param msg_data_p A pointer to a buffer with the raw message data.
- * @param sender_addr_p A pointer to an address struct with the sender's information.
- * @param ctx_p The axc context.
- * @param handshake_response_pp Will point to the response message if successful, unset otherwise. Has to be freed using axc_handshake_destroy().
- * @return 0 on success, negative on error.
- */
-int axc_handshake_accept(axc_buf * msg_data_p, axc_address * sender_addr_p, axc_context * ctx_p, axc_handshake ** handshake_response_pp);
-
-/**
- * Third and final step of session establishment.
- *
- * @param msg_data_p A pointer to a buffer containing the raw message data.
- * @param handshake_p Pointer to the axc_handshake returned by axc_handshake_initiate(). Should be freed by axc_handshake_destroy() afterwards.
- * @param ctx_p The axc context.
- * @return 0 on success, negative on error.
- *
- */
-int axc_handshake_acknowledge(axc_buf * msg_data_p, axc_handshake * handshake_p, axc_context * ctx_p);
-
-/**
- * Frees the memory used by this struct and its members.
- *
- * @param The axc_handshake to destroy.
- */
-void axc_handshake_destroy(axc_handshake * hs);
-
 /**
  * Encrypts a message. Needs an established session, either synchronous or built from bundle.
  * The buffer containing the ciphertext has to be freed afterwards.
@@ -254,7 +203,7 @@ int axc_session_from_bundle(uint32_t pre_key_id,
 int axc_session_delete(const char * user, uint32_t device_id, axc_context * ctx_p);
 
 /**
- * Creates a session from a received pre key message and uses it to decrypt the actual message body..
+ * Creates a session from a received pre key message and uses it to decrypt the actual message body.
  * The ciphertext is decrypted here to avoid reserializing the message or having to deal with internal axolotl data structures.
  *
  * @param pre_key_msg_serialized_p Pointer to the buffer containing the serialized message.
