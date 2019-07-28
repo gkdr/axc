@@ -107,7 +107,7 @@ int main(void) {
       return EXIT_FAILURE;
     }
     axc_bundle_destroy(bundle_bob);
-    axc_buf * msg_buf_p = axc_buf_create("hello", strlen("hello") + 1);
+    axc_buf * msg_buf_p = axc_buf_create((const uint8_t *)"hello", strlen("hello") + 1);
     if (!msg_buf_p) {
       fprintf(stderr, "failed to create 'hello' msg buffer\n");
       axc_cleanup(ctx_b_p);
@@ -222,7 +222,7 @@ int main(void) {
 
     printf("decrypted message: %s\n", axc_buf_get_data(plaintext_p));
 
-    char * upper = axc_buf_get_data(plaintext_p);
+    char * upper = (char *)axc_buf_get_data(plaintext_p);
     for (size_t i = 0; i < strlen(upper); i++) {
       upper[i] = toupper(upper[i]);
     }
