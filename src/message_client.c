@@ -7,7 +7,6 @@
 #include <string.h> // memset, strlen
 #include <unistd.h> // write
 
-#include "axolotl.h"
 
 #include "axc.h"
 
@@ -88,6 +87,76 @@ int main(void) {
   printf("checking if session already exists\n");
   if (!axc_session_exists_initiated(&addr_b, ctx_a_p)) {
     printf("creating session between alice and bob\n");
+    axc_bundle *bundle_bob;
+    if (axc_bundle_collect(AXC_PRE_KEYS_AMOUNT, ctx_b_p, &bundle_bob)) {
+      fprintf(stderr, "failed to collect bob's bundle\n");
+      axc_cleanup(ctx_b_p);
+      return EXIT_FAILURE;
+    }
+    // addr_b.device_id = axc_bundle_get_reg_id(bundle_bob);
+    if (axc_session_from_bundle(axc_buf_list_item_get_id(axc_bundle_get_pre_key_list(bundle_bob)),
+                                axc_buf_list_item_get_buf(axc_bundle_get_pre_key_list(bundle_bob)),
+                                axc_bundle_get_signed_pre_key_id(bundle_bob),
+                                axc_bundle_get_signed_pre_key(bundle_bob),
+                                axc_bundle_get_signature(bundle_bob),
+                                axc_bundle_get_identity_key(bundle_bob),
+                                &addr_b,
+                                ctx_a_p)) {
+      fprintf(stderr, "failed to create session from bob's bundle\n");
+      axc_cleanup(ctx_b_p);
+      return EXIT_FAILURE;
+    }
+    axc_bundle_destroy(bundle_bob);
+    axc_buf * msg_buf_p = axc_buf_create("hello", strlen("hello") + 1);
+    if (!msg_buf_p) {
+      fprintf(stderr, "failed to create 'hello' msg buffer\n");
+      axc_cleanup(ctx_b_p);
+      return EXIT_FAILURE;
+    }
+
+    axc_buf * ct_buf_p;
+    if (axc_message_encrypt_and_serialize(msg_buf_p, &addr_b, ctx_a_p, &ct_buf_p)) {
+      fprintf(stderr, "failed to encrypt 'hello' message\n");
+      axc_cleanup(ctx_b_p);
+      return EXIT_FAILURE;
+    }
+
+    uint32_t alice_id;
+    if (axc_get_device_id(ctx_a_p, &alice_id)) {
+      fprintf(stderr, "failed to retrieve alice's device_id\n");
+      axc_cleanup(ctx_b_p);
+      return EXIT_FAILURE;
+    }
+
+    addr_a.device_id = alice_id;
+
+    axc_buf * pt_buf_p;
+    if (axc_pre_key_message_process(ct_buf_p, &addr_a, ctx_b_p, &pt_buf_p)) {
+      fprintf(stderr, "failed to process 'hello' pre_key_message\n");
+      axc_cleanup(ctx_b_p);
+      return EXIT_FAILURE;
+    }
+
+    axc_buf_free(ct_buf_p);
+    axc_buf_free(pt_buf_p);
+
+    if (axc_message_encrypt_and_serialize(msg_buf_p, &addr_a, ctx_b_p, &ct_buf_p)) {
+      fprintf(stderr, "failed encrypting 2nd 'hello' message\n");
+      axc_cleanup(ctx_b_p);
+      return EXIT_FAILURE;
+    }
+    if (axc_message_decrypt_from_serialized(ct_buf_p, &addr_b, ctx_a_p, &pt_buf_p)) {
+      fprintf(stderr, "failed decrypting 3rd 'hello' message\n");
+      axc_cleanup(ctx_b_p);
+      return EXIT_FAILURE;
+    }
+
+    axc_buf_free(ct_buf_p);
+    axc_buf_free(pt_buf_p);
+
+    axc_buf_free(msg_buf_p);
+
+#if 0
     printf("creating handshake initiation message\n");
     axc_handshake * handshake_a;
     if (axc_handshake_initiate(&addr_b, ctx_a_p, &handshake_a)) {
@@ -110,7 +179,7 @@ int main(void) {
       axc_cleanup(ctx_b_p);
       return EXIT_FAILURE;
     }
-
+#endif
     printf("session created on each side\n");
   } else {
     printf("session exists.\n");
@@ -123,6 +192,7 @@ int main(void) {
   //goto cleanup;
   while(getline(&line, &len, stdin)) {
     axc_buf * ciphertext_p;
+    {
     axc_buf * msg_p = axc_buf_create((uint8_t *) line, strlen(line) + 1);
     if (axc_message_encrypt_and_serialize(msg_p, &addr_b, ctx_a_p, &ciphertext_p)) {
       fprintf(stderr, "failed to encrypt message from alice to bob\n");
@@ -130,21 +200,25 @@ int main(void) {
       return EXIT_FAILURE;
     }
     printf("encrypted message from alice to bob: %s\n", line);
+    axc_buf_free(msg_p);
+    }
 
-    uint8_t * buf = axolotl_buffer_data(ciphertext_p);
+    uint8_t * buf = signal_buffer_data(ciphertext_p);
 
-    printf("ciphertext:\n");
+    printf("serialized ciphertext (hex):\n");
     for (size_t i = 0; i < axc_buf_get_len(ciphertext_p); i++) {
-      printf("0x%02X ", buf[i]);
+      printf("%02X ", buf[i]);
     }
     printf("\n");
 
+    axc_buf * upper_buf;
     axc_buf * plaintext_p;
     if (axc_message_decrypt_from_serialized(ciphertext_p, &addr_a, ctx_b_p, &plaintext_p)) {
       fprintf(stderr, "failed to decrypt message from alice to bob\n");
       axc_cleanup(ctx_b_p);
       return EXIT_FAILURE;
     }
+    axc_buf_free(ciphertext_p);
 
     printf("decrypted message: %s\n", axc_buf_get_data(plaintext_p));
 
@@ -154,19 +228,21 @@ int main(void) {
     }
     printf("bob sending reply...\n");
 
-    axc_buf * upper_buf = axc_buf_create((uint8_t *) upper, strlen(upper) + 1);
+    upper_buf = axc_buf_create((uint8_t *) upper, strlen(upper) + 1);
+    axc_buf_free(plaintext_p);
 
     if (axc_message_encrypt_and_serialize(upper_buf, &addr_a, ctx_b_p, &ciphertext_p)) {
       fprintf(stderr, "failed to encrypt message from bob to alice\n");
       axc_cleanup(ctx_b_p);
       return EXIT_FAILURE;
     }
+    axc_buf_free(upper_buf);
 
-    buf = axolotl_buffer_data(ciphertext_p);
+    buf = signal_buffer_data(ciphertext_p);
 
-    printf("ciphertext:\n");
+    printf("serialized ciphertext (hex):\n");
     for (size_t i = 0; i < axc_buf_get_len(ciphertext_p); i++) {
-      printf("0x%02X ", buf[i]);
+      printf("%02X ", buf[i]);
     }
     printf("\n");
 
@@ -175,11 +251,14 @@ int main(void) {
       axc_cleanup(ctx_b_p);
       return EXIT_FAILURE;
     }
+    axc_buf_free(ciphertext_p);
 
     printf("received reply from bob: %s\n", axc_buf_get_data(plaintext_p));
+    axc_buf_free(plaintext_p);
 
     printf("enter message: ");
   }
+  free(line);
 
   printf("done, exiting.");
   axc_cleanup(ctx_a_p);
