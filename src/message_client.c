@@ -127,7 +127,6 @@ int main(void) {
       axc_cleanup(ctx_b_p);
       return EXIT_FAILURE;
     }
-
     addr_a.device_id = alice_id;
 
     axc_buf * pt_buf_p;
@@ -183,6 +182,13 @@ int main(void) {
     printf("session created on each side\n");
   } else {
     printf("session exists.\n");
+    uint32_t alice_id;
+    if (axc_get_device_id(ctx_a_p, &alice_id)) {
+      fprintf(stderr, "failed to retrieve alice's device_id\n");
+      axc_cleanup(ctx_b_p);
+      return EXIT_FAILURE;
+    }
+    addr_a.device_id = alice_id;
   }
   printf("now trying to ready to 'send' and 'receive' messages\n");
 
