@@ -196,7 +196,7 @@ int main(void) {
   size_t len = 0;
   printf("enter message: ");
   //goto cleanup;
-  while(getline(&line, &len, stdin)) {
+  while(getline(&line, &len, stdin) > 0) {
     axc_buf * ciphertext_p;
     {
     axc_buf * msg_p = axc_buf_create((uint8_t *) line, strlen(line) + 1);
@@ -266,7 +266,7 @@ int main(void) {
   }
   free(line);
 
-  printf("done, exiting.");
+  printf("done, exiting.\n");
   axc_cleanup(ctx_a_p);
   axc_cleanup(ctx_b_p);
 }
