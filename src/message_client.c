@@ -155,30 +155,6 @@ int main(void) {
 
     axc_buf_free(msg_buf_p);
 
-#if 0
-    printf("creating handshake initiation message\n");
-    axc_handshake * handshake_a;
-    if (axc_handshake_initiate(&addr_b, ctx_a_p, &handshake_a)) {
-      fprintf(stderr, "failed to initialize handshake from alice to bob\n");
-      axc_cleanup(ctx_b_p);
-      return EXIT_FAILURE;
-    }
-
-    printf("'sending' the message to bob and accepting it\n");
-    axc_handshake * handshake_b;
-    if (axc_handshake_accept(axc_handshake_get_data(handshake_a), &addr_a, ctx_b_p, &handshake_b)) {
-      fprintf(stderr, "failed to accept handshake on bob's side\n");
-      axc_cleanup(ctx_b_p);
-      return EXIT_FAILURE;
-    }
-
-    printf("'sending' response from bob back to alice\n");
-    if (axc_handshake_acknowledge(axc_handshake_get_data(handshake_b), handshake_a, ctx_a_p)) {
-      fprintf(stderr, "failed to acknowledge handhshake on alice' side\n");
-      axc_cleanup(ctx_b_p);
-      return EXIT_FAILURE;
-    }
-#endif
     printf("session created on each side\n");
   } else {
     printf("session exists.\n");
