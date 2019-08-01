@@ -383,6 +383,7 @@ cleanup:
     }
   }
 
+  free(pt_p);
   free(out_p);
   gcry_cipher_close(cipher_hd);
 
