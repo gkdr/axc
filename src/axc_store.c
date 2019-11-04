@@ -38,6 +38,7 @@
 #define IDENTITY_KEY_STORE_KEY_NAME "key"
 #define IDENTITY_KEY_STORE_KEY_LEN_NAME "key_len"
 #define IDENTITY_KEY_STORE_TRUSTED_NAME "trusted"
+#define IDENTITY_KEY_STORE_DEVICE_ID_NAME "device_id"
 #define SETTINGS_STORE_TABLE_NAME "settings"
 #define SETTINGS_STORE_NAME_NAME "name"
 #define SETTINGS_STORE_PROPERTY_NAME "property"
@@ -177,7 +178,8 @@ int axc_db_create(axc_context * axc_ctx_p) {
                                IDENTITY_KEY_STORE_NAME_NAME " TEXT NOT NULL PRIMARY KEY, "
                                IDENTITY_KEY_STORE_KEY_NAME " BLOB NOT NULL, "
                                IDENTITY_KEY_STORE_KEY_LEN_NAME " INTEGER NOT NULL, "
-                               IDENTITY_KEY_STORE_TRUSTED_NAME " INTEGER NOT NULL);"
+                               IDENTITY_KEY_STORE_TRUSTED_NAME " INTEGER NOT NULL, "
+                               IDENTITY_KEY_STORE_DEVICE_ID_NAME " INTEGER NOT NULL);"
                              "CREATE TABLE IF NOT EXISTS " SETTINGS_STORE_TABLE_NAME "("
                                SETTINGS_STORE_NAME_NAME " TEXT NOT NULL PRIMARY KEY, "
                                SETTINGS_STORE_PROPERTY_NAME " INTEGER NOT NULL);"
@@ -1283,8 +1285,8 @@ int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t * key_d
   // 2 - key blob
   // 3 - length of the key
   // 4 - trusted (1 for true, 0 for false)
-  char save_stmt[] = "INSERT OR REPLACE INTO " IDENTITY_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3, ?4);";
-  char del_stmt[] = "DELETE FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1;";
+  char save_stmt[] = "INSERT OR REPLACE INTO " IDENTITY_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3, ?4, ?5);";
+  char del_stmt[] = "DELETE FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1 AND " IDENTITY_KEY_STORE_DEVICE_ID_NAME " IS ?2;";
   char * stmt = (void *) 0;
 
   if (key_data) {
@@ -1316,6 +1318,13 @@ int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t * key_d
       db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
       return -24;
     }
+    if(sqlite3_bind_int(pstmt_p, 5, addr_p->device_id)) {
+      db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
+      return -25;
+    }
+  } else if (sqlite3_bind_int(pstmt_p, 2, addr_p->device_id)) {
+      db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
+      return -25;
   }
 
   if (db_exec_single_change(db_p, pstmt_p, axc_ctx_p)) return -3;
@@ -1324,21 +1333,25 @@ int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t * key_d
   return 0;
 }
 
-int axc_db_identity_is_trusted(const char * name, size_t name_len, uint8_t * key_data, size_t key_len, void * user_data) {
-  const char stmt[] = "SELECT * FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1;";
+int axc_db_identity_is_trusted(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len, void * user_data) {
+  const char stmt[] = "SELECT * FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1 AND " IDENTITY_KEY_STORE_DEVICE_ID_NAME " IS ?2;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
-  signal_buffer * key_record = (void *) 0;
   int step_result = 0;
   size_t record_len = 0;
 
   if (db_conn_open(&db_p, &pstmt_p, stmt, user_data)) return -1;
 
-  if (sqlite3_bind_text(pstmt_p, 1, name, -1, SQLITE_TRANSIENT)) {
+  if (sqlite3_bind_text(pstmt_p, 1, addr_p->name, -1, SQLITE_TRANSIENT)) {
     db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
     return -21;
+  }
+
+  if (sqlite3_bind_int(pstmt_p, 2, addr_p->device_id)) {
+    db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
+    return -25;
   }
 
   step_result = sqlite3_step(pstmt_p);
@@ -1355,25 +1368,17 @@ int axc_db_identity_is_trusted(const char * name, size_t name_len, uint8_t * key
       return 0;
     }
 
-    key_record = signal_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
-    if (key_record == 0) {
-      db_conn_cleanup(db_p, pstmt_p, "Buffer could not be initialised", __func__, axc_ctx_p);
-      return -3;
-    }
-
-    if (memcmp(key_data, signal_buffer_data(key_record), key_len)) {
+    // key_len should equal to record_len here
+    if (memcmp(key_data, sqlite3_column_blob(pstmt_p, 1), key_len)) {
       db_conn_cleanup(db_p, pstmt_p, "Key data does not match", __func__, axc_ctx_p);
     }
 
     db_conn_cleanup(db_p, pstmt_p, (void *) 0, __func__, axc_ctx_p);
-    signal_buffer_bzero_free(key_record);
     return 1;
   } else {
     db_conn_cleanup(db_p, pstmt_p, "Failed executing SQL statement", __func__, axc_ctx_p);
     return -32;
   }
-
-  (void)name_len;
 }
 
 int axc_db_identity_always_trusted(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len, void * user_data) {
