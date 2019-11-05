@@ -4,6 +4,8 @@
 
 #include "signal_protocol.h"
 
+extern const signal_crypto_provider axc_crypto_provider_tmpl;
+
 void axc_crypto_init(void);
 void axc_crypto_teardown(void);
 

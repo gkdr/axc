@@ -12,6 +12,11 @@
 #define AXC_DB_NEEDS_ROLLBACK    0
 #define AXC_DB_INITIALIZED       1
 
+extern const signal_protocol_session_store axc_session_store_tmpl;
+extern const signal_protocol_pre_key_store axc_pre_key_store_tmpl;
+extern const signal_protocol_signed_pre_key_store axc_signed_pre_key_store_tmpl;
+extern const signal_protocol_identity_key_store axc_identity_key_store_tmpl;
+
 // session store
 int axc_db_session_load(signal_buffer **record, signal_buffer **user_record, const signal_protocol_address *address, void *user_data);
 int axc_db_session_get_sub_device_sessions(signal_int_list **sessions, const char *name, size_t name_len, void *user_data);
