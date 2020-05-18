@@ -1030,8 +1030,9 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
   // 1 - name ("public" or "private")
   // 2 - key blob
   // 3 - length of the key
-  // 4 - trusted (1 for true, 0 for false)
-  static const char stmt[] = "INSERT INTO " IDENTITY_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3, ?4);";
+  // 4 - trusted (1 for true, 0 for false, 2 for OWN_KEY)
+  // 5 - device_id (0, for identity key is already marked with OWN_KEY)
+  static const char stmt[] = "INSERT INTO " IDENTITY_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3, ?4, ?5);";
 
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
@@ -1075,6 +1076,12 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
   }
 
   if (sqlite3_bind_int(pstmt_p, 4, OWN_KEY)) {
+    err_msg = "Failed to bind";
+    ret_val = -24;
+    goto cleanup;
+  }
+
+  if (sqlite3_bind_int(pstmt_p, 5, 0)) {
     err_msg = "Failed to bind";
     ret_val = -24;
     goto cleanup;
@@ -1127,6 +1134,12 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
   }
 
   if (sqlite3_bind_int(pstmt_p, 4, OWN_KEY)) {
+    err_msg = "Failed to bind";
+    ret_val = -24;
+    goto cleanup;
+  }
+
+  if (sqlite3_bind_int(pstmt_p, 5, 0)) {
     err_msg = "Failed to bind";
     ret_val = -24;
     goto cleanup;
