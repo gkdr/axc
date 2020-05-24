@@ -4,7 +4,7 @@
 
 #include <gcrypt.h>
 
-#include "signal_protocol.h"
+#include <signal_protocol.h>
 
 #include "axc.h"
 

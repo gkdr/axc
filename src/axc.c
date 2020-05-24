@@ -10,13 +10,12 @@
 
 #include <glib.h>
 
-#include "signal_protocol.h"
-#include "key_helper.h"
-#include "protocol.h"
-#include "session_builder.h"
-#include "session_builder_internal.h"
-#include "session_cipher.h"
-#include "session_state.h"
+#include <signal_protocol.h>
+#include <key_helper.h>
+#include <protocol.h>
+#include <session_builder.h>
+#include <session_cipher.h>
+#include <session_state.h>
 
 #include "axc.h"
 #include "axc_store.h"
@@ -1123,11 +1122,11 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
 
 
 
-  ret_val = session_builder_process_pre_key_signal_message(session_builder_p, session_record_p, pre_key_msg_p, &pre_key_id);
+  /* ret_val = session_builder_process_pre_key_signal_message(session_builder_p, session_record_p, pre_key_msg_p, &pre_key_id);
   if (ret_val < 0) {
     err_msg = "failed to process pre key message";
     goto cleanup;
-  }
+  } */
 
 
   ret_val = session_cipher_create(&session_cipher_p, ctx_p->axolotl_store_context_p, remote_address_p, ctx_p->axolotl_global_context_p);

@@ -3,8 +3,8 @@
 #include <stdlib.h> // exit
 #include <string.h> // strlen
 
-#include "signal_protocol.h"
-#include "key_helper.h"
+#include <signal_protocol.h>
+#include <key_helper.h>
 
 #include <sqlite3.h>
 
