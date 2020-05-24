@@ -1,0 +1,11 @@
+prefix=/usr
+includedir=${prefix}/include
+libdir=${prefix}/lib/${ARCH}
+
+Name: libaxc
+Version: ${version}
+Description: client library for libsignal-protocol-c
+Requires.private: glib-2.0
+Cflags: -I${includedir}/axc
+Libs: -L${libdir} -llibaxc
+
