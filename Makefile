@@ -81,7 +81,20 @@ $(BDIR)/libaxc-nt.a: $(BDIR)/axc-nt.o $(BDIR)/axc_crypto.o $(BDIR)/axc_store.o
 $(BDIR)/libaxc.so: $(BDIR)
 	$(CC) -shared -Wl,-soname,libaxc.so.$(VER_MAJ) -o $@ $(PICFLAGS) $(SDIR)/axc.c $(SDIR)/axc_crypto.c $(SDIR)/axc_store.c $(LDFLAGS) $(CPPFLAGS)
 
-shared: $(BDIR)/libaxc.so
+$(BDIR)/libaxc.pc: $(BDIR)
+	echo 'prefix='$(PREFIX) > $@
+	echo 'exec_prefix=$${prefix}' >> $@
+	echo 'libdir=$${prefix}/lib/$(ARCH)' >> $@
+	echo 'includedir=$${prefix}/include' >> $@
+	echo 'Name: libaxc' >> $@
+	echo 'Version: ${VERSION}' >> $@
+	echo 'Description: client library for libsignal-protocol-c' >> $@
+	echo 'Requires: glib-2.0, sqlite3, libsignal-protocol-c' >> $@
+	echo 'Cflags: -I$${includedir}/axc' >> $@
+	echo 'Libs: -L$${libdir} -laxc' >> $@
+
+
+shared: $(BDIR)/libaxc.so $(BDIR)/libaxc.pc
 
 ifeq ($(PREFIX),)
 PREFIX := /usr/local
@@ -90,7 +103,7 @@ endif
 install: $(BDIR)
 	install -d $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/pkgconfig/
 	install -m 644 $(BDIR)/libaxc.so $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/libaxc.so.$(VERSION)
-	install -m 644 $(SDIR)/libaxc.pc $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/pkgconfig/
+	install -m 644 $(BDIR)/libaxc.pc $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/pkgconfig/
 	install -d $(DESTDIR)/$(PREFIX)/include/axc/
 	install -m 644 $(SDIR)/axc.h $(DESTDIR)/$(PREFIX)/include/axc/
 	install -m 644 $(SDIR)/axc_crypto.h $(DESTDIR)/$(PREFIX)/include/axc/
