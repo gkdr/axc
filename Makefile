@@ -49,6 +49,9 @@ PICFLAGS=-fPIC $(CFLAGS)
 LDFLAGS += -pthread -ldl $(PKGCFG_L) -lm
 LDFLAGS_T= -lcmocka $(LDFLAGS)
 
+ifeq ($(PREFIX),)
+PREFIX := /usr/local
+endif
 
 
 all: $(BDIR)/libaxc.a shared
@@ -89,19 +92,17 @@ $(BDIR)/libaxc.pc: $(BDIR)
 	echo 'Name: libaxc' >> $@
 	echo 'Version: ${VERSION}' >> $@
 	echo 'Description: client library for libsignal-protocol-c' >> $@
-	echo 'Requires: glib-2.0, sqlite3, libsignal-protocol-c' >> $@
+	echo 'Requires: libsignal-protocol-c' >> $@
 	echo 'Cflags: -I$${includedir}/axc' >> $@
 	echo 'Libs: -L$${libdir} -laxc' >> $@
 
 
 shared: $(BDIR)/libaxc.so $(BDIR)/libaxc.pc
 
-ifeq ($(PREFIX),)
-PREFIX := /usr/local
-endif
 
 install: $(BDIR)
 	install -d $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/pkgconfig/
+	install -m 644 $(BDIR)/libaxc.a  $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/libaxc.a
 	install -m 644 $(BDIR)/libaxc.so $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/libaxc.so.$(VERSION)
 	install -m 644 $(BDIR)/libaxc.pc $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/pkgconfig/
 	install -d $(DESTDIR)/$(PREFIX)/include/axc/
