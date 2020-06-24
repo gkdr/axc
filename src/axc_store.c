@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2017-2020 Richard Bayerle <riba@firemail.cc>
+ * SPDX-License-Identifier: GPL-3.0
+ * Author: Richard Bayerle <riba@firemail.cc>
+ */
+
+
 #include <stdint.h> // int types
 #include <stdio.h> // printf
 #include <stdlib.h> // exit
