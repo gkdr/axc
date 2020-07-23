@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2017-2020 Richard Bayerle <riba@firemail.cc>
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Author: Richard Bayerle <riba@firemail.cc>
+ */
+
+
 #pragma once
 
 #include <stdint.h>
