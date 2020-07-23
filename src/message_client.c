@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2017-2020 Richard Bayerle <riba@firemail.cc>
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Author: Richard Bayerle <riba@firemail.cc>
+ */
+
+
 #include <ctype.h> // toupper
 #include <stdio.h> // printf, getline
 #include <stdlib.h> // exit codes

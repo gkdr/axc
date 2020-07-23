@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2017-2020 Richard Bayerle <riba@firemail.cc>
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Author: Richard Bayerle <riba@firemail.cc>
+ */
+
+
 #include <inttypes.h>
 #include <stdarg.h> // va_*
 #include <stdio.h> // printf, fprintf
@@ -10,12 +17,13 @@
 
 #include <glib.h>
 
-#include <signal_protocol.h>
-#include <key_helper.h>
-#include <protocol.h>
-#include <session_builder.h>
-#include <session_cipher.h>
-#include <session_state.h>
+
+#include "signal_protocol.h"
+#include "key_helper.h"
+#include "protocol.h"
+#include "session_builder.h"
+#include "session_cipher.h"
+#include "session_state.h"
 
 #include "axc.h"
 #include "axc_store.h"
@@ -1062,29 +1070,12 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
   char * err_msg = "";
   int ret_val = 0;
 
-  session_builder * session_builder_p = (void *) 0;
-  session_record * session_record_p = (void *) 0;
   pre_key_signal_message * pre_key_msg_p = (void *) 0;
   uint32_t new_id = 0;
   uint32_t pre_key_id = 0;
   session_cipher * session_cipher_p = (void *) 0;
   axc_buf * plaintext_p = (void *) 0;
   signal_protocol_key_helper_pre_key_list_node * key_l_p = (void *) 0;
-
-
-  ret_val = session_builder_create(&session_builder_p, ctx_p->axolotl_store_context_p, remote_address_p, ctx_p->axolotl_global_context_p);
-  if (ret_val) {
-    err_msg = "failed to create session builder";
-    goto cleanup;
-  }
-
-
-  ret_val = signal_protocol_session_load_session(ctx_p->axolotl_store_context_p, &session_record_p, remote_address_p);
-  if (ret_val) {
-    err_msg = "failed to load or create session record";
-    goto cleanup;
-  }
-
 
   ret_val = pre_key_signal_message_deserialize(&pre_key_msg_p,
                                                 axc_buf_get_data(pre_key_msg_serialized_p),
@@ -1121,7 +1112,6 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
   } while (signal_protocol_pre_key_contains_key(ctx_p->axolotl_store_context_p, session_pre_key_get_id(signal_protocol_key_helper_key_list_element(key_l_p))));
 
 
-
   /* ret_val = session_builder_process_pre_key_signal_message(session_builder_p, session_record_p, pre_key_msg_p, &pre_key_id);
   if (ret_val < 0) {
     err_msg = "failed to process pre key message";
@@ -1156,9 +1146,7 @@ cleanup:
   }
 
   SIGNAL_UNREF(pre_key_msg_p);
-  SIGNAL_UNREF(session_record_p);
   SIGNAL_UNREF(session_cipher_p);
-  session_builder_free(session_builder_p);
   signal_protocol_key_helper_key_list_free(key_l_p);
 
   return ret_val;
