@@ -10,6 +10,10 @@ ARCH := $(shell gcc -print-multiarch)
 VER_MAJ = 0
 VERSION = 0.3.2
 
+AX_DIR=./lib/libsignal-protocol-c
+AX_BDIR=$(AX_DIR)/build/src
+AX_PATH=$(AX_BDIR)/libsignal-protocol-c.a
+
 PKG_CONFIG ?= pkg-config
 GLIB_CFLAGS ?= $(shell $(PKG_CONFIG) --cflags glib-2.0)
 GLIB_LDFLAGS ?= $(shell $(PKG_CONFIG) --libs glib-2.0)
@@ -23,6 +27,7 @@ SIGNAL_LDFLAGS ?= $(shell $(PKG_CONFIG) --libs libsignal-protocol-c)
 LIBGCRYPT_CONFIG ?= libgcrypt-config
 LIBGCRYPT_LDFLAGS ?= $(shell $(LIBGCRYPT_CONFIG) --libs)
 
+
 SDIR = src
 LDIR = lib
 BDIR = build
@@ -32,26 +37,38 @@ CDIR = coverage
 
 PKGCFG_C=$(GLIB_CFLAGS) \
 	 $(SQLITE3_CFLAGS) \
-	 $(LIBGCRYPT_CFLAGS) \
-	 $(SIGNAL_CFLAGS)
+	 $(LIBGCRYPT_CFLAGS)
 
 PKGCFG_L=$(GLIB_LDFLAGS) \
 	 $(SQLITE3_LDFLAGS) \
-	 $(LIBGCRYPT_LDFLAGS) \
-	 $(SIGNAL_LDFLAGS)
+	 $(LIBGCRYPT_LDFLAGS)
 
-CFLAGS += $(PKGCFG_C) -std=c11 -g -Wall -Wextra -Wpedantic \
+CPPFLAGS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -D_DEFAULT_SOURCE
+PICFLAGS=-fPIC $(CFLAGS)
+
+ifeq ($(OS),Windows_NT)
+	HEADERS=-I$(AX_DIR)/src
+	CFLAGS += $(HEADERS) $(PKGCFG_C) -std=c11 -g -Wall -Wextra -Wpedantic \
+		  -Wstrict-overflow -fno-strict-aliasing -funsigned-char \
+		  -fno-builtin-memset
+	TESTFLAGS=$(HEADERS) $(PKGCFG_C) -g -O0 --coverage
+	LDFLAGS += -pthread -ldl $(PKGCFG_L) $(AX_PATH) -lm
+	LDFLAGS_T= -lcmocka $(LDFLAGS)
+else
+	PKGCFG_C += $(SIGNAL_CFLAGS)
+	PKGCFG_L += $(SIGNAL_LDFLAGS)
+	CFLAGS += $(PKGCFG_C) -std=c11 -g -Wall -Wextra -Wpedantic \
 		  -Wstrict-overflow -fno-strict-aliasing -funsigned-char \
 		  -fno-builtin-memset -fstack-protector-strong -Wformat -Werror=format-security
-CPPFLAGS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -D_DEFAULT_SOURCE
-TESTFLAGS=$(PKGCFG_C) -g -O0 --coverage -fstack-protector-strong -Wformat -Werror=format-security
-PICFLAGS=-fPIC $(CFLAGS)
-LDFLAGS += -pthread -ldl $(PKGCFG_L) -lm
-LDFLAGS_T= -lcmocka $(LDFLAGS)
+	TESTFLAGS=$(PKGCFG_C) -g -O0 --coverage -fstack-protector-strong -Wformat -Werror=format-security
+	LDFLAGS += -pthread -ldl $(PKGCFG_L) -lm
+	LDFLAGS_T= -lcmocka $(LDFLAGS)
 
-ifeq ($(PREFIX),)
-PREFIX := /usr/local
+	ifeq ($(PREFIX),)
+		PREFIX := /usr/local
+	endif
 endif
+
 
 
 all: $(BDIR)/libaxc.a shared
@@ -59,7 +76,7 @@ all: $(BDIR)/libaxc.a shared
 $(BDIR):
 	$(MKDIR_P) $@
 
-client: $(SDIR)/message_client.c $(BDIR)/axc_store.o $(BDIR)/axc_crypto.o $(BDIR)/axc.o
+client: $(SDIR)/message_client.c $(BDIR)/axc_store.o $(BDIR)/axc_crypto.o $(BDIR)/axc.o $(AX_PATH)
 	$(MKDIR_P) $@
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@/$@.o $(LDFLAGS)
 
@@ -95,6 +112,13 @@ $(BDIR)/libaxc.pc: $(BDIR)
 	echo 'Requires: libsignal-protocol-c' >> $@
 	echo 'Cflags: -I$${includedir}/axc' >> $@
 	echo 'Libs: -L$${libdir} -laxc' >> $@
+
+$(AX_PATH):
+	cd $(AX_DIR) && \
+		$(MKDIR_P) build && \
+		cd build && \
+		$(CMAKE) $(CMAKE_FLAGS) ..  && \
+		$(MAKE)
 
 
 shared: $(BDIR)/libaxc.so $(BDIR)/libaxc.pc
@@ -139,6 +163,6 @@ clean:
 	
 .PHONY: clean-all
 clean-all: clean
-	rm -rf client $(BDIR) $(CDIR)
+	rm -rf client $(BDIR) $(CDIR) $(AX_DIR)/build
 
 
