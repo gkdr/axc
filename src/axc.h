@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-#include <signal_protocol.h>
+#include "signal_protocol.h"
 
 typedef struct axc_context axc_context;
 typedef struct axc_bundle axc_bundle;

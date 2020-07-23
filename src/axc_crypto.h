@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-#include <signal_protocol.h>
+#include "signal_protocol.h"
 
 void axc_crypto_init(void);
 void axc_crypto_teardown(void);
