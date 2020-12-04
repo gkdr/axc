@@ -1112,13 +1112,6 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
   } while (signal_protocol_pre_key_contains_key(ctx_p->axolotl_store_context_p, session_pre_key_get_id(signal_protocol_key_helper_key_list_element(key_l_p))));
 
 
-  /* ret_val = session_builder_process_pre_key_signal_message(session_builder_p, session_record_p, pre_key_msg_p, &pre_key_id);
-  if (ret_val < 0) {
-    err_msg = "failed to process pre key message";
-    goto cleanup;
-  } */
-
-
   ret_val = session_cipher_create(&session_cipher_p, ctx_p->axolotl_store_context_p, remote_address_p, ctx_p->axolotl_global_context_p);
   if (ret_val) {
     err_msg = "failed to create session cipher";
