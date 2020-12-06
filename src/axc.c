@@ -1072,7 +1072,7 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
 
   pre_key_signal_message * pre_key_msg_p = (void *) 0;
   uint32_t new_id = 0;
-  // uint32_t pre_key_id = 0;
+  uint32_t pre_key_id = 0;
   session_cipher * session_cipher_p = (void *) 0;
   axc_buf * plaintext_p = (void *) 0;
   signal_protocol_key_helper_pre_key_list_node * key_l_p = (void *) 0;
