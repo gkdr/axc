@@ -43,32 +43,32 @@ PKGCFG_L=$(GLIB_LDFLAGS) \
 	 $(SQLITE3_LDFLAGS) \
 	 $(LIBGCRYPT_LDFLAGS)
 
-CPPFLAGS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -D_DEFAULT_SOURCE
-PICFLAGS=-fPIC $(CFLAGS)
+
 
 ifeq ($(OS),Windows_NT)
 	HEADERS=-I$(AX_DIR)/src
-	CFLAGS += $(HEADERS) $(PKGCFG_C) -std=c11 -g -Wall -Wextra -Wpedantic \
-		  -Wstrict-overflow -fno-strict-aliasing -funsigned-char \
-		  -fno-builtin-memset
-	TESTFLAGS=$(HEADERS) $(PKGCFG_C) -g -O0 --coverage
-	LDFLAGS += -pthread -ldl $(PKGCFG_L) $(AX_PATH) -lm
-	LDFLAGS_T= -lcmocka $(LDFLAGS)
+	PKGCFG_C=$(HEADERS) \
+         $(PKGCFG_C)
+	PKGCFG_L=$(PKGCFG_L) \
+         $(AX_PATH)
 else
 	PKGCFG_C += $(SIGNAL_CFLAGS)
 	PKGCFG_L += $(SIGNAL_LDFLAGS)
-	CFLAGS += $(PKGCFG_C) -std=c11 -g -Wall -Wextra -Wpedantic \
-		  -Wstrict-overflow -fno-strict-aliasing -funsigned-char \
-		  -fno-builtin-memset -fstack-protector-strong -Wformat -Werror=format-security
-	TESTFLAGS=$(PKGCFG_C) -g -O0 --coverage -fstack-protector-strong -Wformat -Werror=format-security
-	LDFLAGS += -pthread -ldl $(PKGCFG_L) -lm
-	LDFLAGS_T= -lcmocka $(LDFLAGS)
 
 	ifeq ($(PREFIX),)
 		PREFIX := /usr/local
 	endif
 endif
 
+
+PICFLAGS=-fPIC $(CFLAGS)
+CPPFLAGS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -D_DEFAULT_SOURCE
+CFLAGS += $(PKGCFG_C) -std=c11 -g -Wall -Wextra -Wpedantic \
+	  -Wstrict-overflow -fno-strict-aliasing -funsigned-char \
+	  -fno-builtin-memset -fstack-protector-strong -Wformat -Werror=format-security
+TESTFLAGS=$(PKGCFG_C) -g -O0 --coverage -fstack-protector-strong -Wformat -Werror=format-security
+LDFLAGS += -pthread -ldl $(PKGCFG_L) -lm
+LDFLAGS_T= -lcmocka $(LDFLAGS)
 
 
 all: $(BDIR)/libaxc.a shared
