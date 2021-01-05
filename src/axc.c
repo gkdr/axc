@@ -420,6 +420,8 @@ void axc_context_destroy_all(axc_context * ctx_p) {
     axc_mutexes_destroy(ctx_p->mutexes_p);
 
     free(ctx_p->db_filename);
+
+    free(ctx_p);
   }
 }
 
