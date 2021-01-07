@@ -131,8 +131,14 @@ install: $(BDIR)
 	install -m 644 $(SDIR)/axc_crypto.h $(DESTDIR)/$(PREFIX)/include/axc/
 	install -m 644 $(SDIR)/axc_store.h $(DESTDIR)/$(PREFIX)/include/axc/
 
+
+ifneq ($(REQPKG),)
 .PHONY: test
 test: test_store test_client
+else
+.PHONY: test
+test: $(AX_PATH) test_store test_client
+endif
 
 .PHONY: test_store
 test_store: $(SDIR)/axc_store.c $(SDIR)/axc_crypto.c $(TDIR)/test_store.c
