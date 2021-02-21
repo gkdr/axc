@@ -125,6 +125,8 @@ install: $(BDIR)
 	install -d $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/pkgconfig/
 	install -m 644 $(BDIR)/libaxc.a  $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/libaxc.a
 	install -m 644 $(BDIR)/libaxc.so $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/libaxc.so.$(VERSION)
+	ln -s libaxc.so.$(VERSION) $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/libaxc.so.$(VER_MAJ)
+	ln -s libaxc.so.$(VERSION) $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/libaxc.so
 	install -m 644 $(BDIR)/libaxc.pc $(DESTDIR)/$(PREFIX)/lib/$(ARCH)/pkgconfig/
 	install -d $(DESTDIR)/$(PREFIX)/include/axc/
 	install -m 644 $(SDIR)/axc.h $(DESTDIR)/$(PREFIX)/include/axc/
