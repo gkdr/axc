@@ -1140,7 +1140,7 @@ cleanup:
   }
 
   SIGNAL_UNREF(pre_key_msg_p);
-  SIGNAL_UNREF(session_cipher_p);
+  session_cipher_free(session_cipher_p);
   signal_protocol_key_helper_key_list_free(key_l_p);
 
   return ret_val;
