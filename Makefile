@@ -146,13 +146,13 @@ endif
 test_store: $(SDIR)/axc_store.c $(SDIR)/axc_crypto.c $(TDIR)/test_store.c
 	$(CC) $(TESTFLAGS) -o $(TDIR)/$@.o  $(TDIR)/test_store.c $(SDIR)/axc_crypto.c $(LDFLAGS_T)
 	-$(TDIR)/$@.o
-	mv *.g* $(TDIR)
+	find . -maxdepth 1 -iname 'test*.g*' -exec mv {} $(TDIR) \;
 
 .PHONY: test_client
 test_client: $(SDIR)/axc.c $(SDIR)/axc_crypto.c  $(SDIR)/axc_store.c $(TDIR)/test_client.c
 	$(CC) $(TESTFLAGS) -o $(TDIR)/$@.o $(SDIR)/axc_crypto.c $(TDIR)/test_client.c $(LDFLAGS_T)
 	-$(TDIR)/$@.o
-	mv *.g* $(TDIR)
+	find . -maxdepth 1 -iname 'test*.g*' -exec mv {} $(TDIR) \;
 
 .PHONY: coverage
 coverage: test
