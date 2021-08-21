@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.5] - 2021-08-21
+### Fixed
+- Added missing symlinks `libaxc.so.$(VER_MAJ)` and `libaxc.so`. ([#24](https://github.com/gkdr/axc/pull/24)) (thanks, [@hartwork](https://github.com/hartwork)!)
+- `session_cipher` is now `free()`d using the correct function. ([#25](https://github.com/gkdr/axc/pull/25)) (thanks, [@root-hardenedvault](https://github.com/root-hardenedvault)!)
+- Already removed files now don't cause an error during cleanup. ([#27](https://github.com/gkdr/axc/pull/27)) (thanks, [@henry-nicolas](https://github.com/henry-nicolas)!)
+
 ## [0.3.4] - 2021-02-10
 ### Added
 - Makefile target to build a shared library, optionally depending on a shared libsignal-protocol-c. ([#17](https://github.com/gkdr/axc/pull/17)) (thanks, [@henry-nicolas](https://github.com/henry-nicolas)!)
