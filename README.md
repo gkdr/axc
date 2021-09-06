@@ -1,4 +1,4 @@
-# axc 0.3.5
+# axc 0.3.6
 Client lib for [libsignal-c](https://github.com/WhisperSystems/libsignal-protocol-c), implementing the needed database and crypto interfaces using SQLite and gcrypt.
 Initially, the library's name was _libaxolotl_, hence the name.
 
