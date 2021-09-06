@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.6] - 2021-09-06
+### Fixed
+- `pkg_config` can now be set from env like the rest of the tools. ([#28](https://github.com/gkdr/axc/pull/28)) (thanks, [@henry-nicolas](https://github.com/henry-nicolas) and Helmut Grohne!)
+
 ## [0.3.5] - 2021-08-21
 ### Fixed
 - Added missing symlinks `libaxc.so.$(VER_MAJ)` and `libaxc.so`. ([#24](https://github.com/gkdr/axc/pull/24)) (thanks, [@hartwork](https://github.com/hartwork)!)
