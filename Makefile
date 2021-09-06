@@ -44,7 +44,7 @@ PKGCFG_L=$(GLIB_LDFLAGS) \
 	 $(LIBGCRYPT_LDFLAGS)
 
 REQPKG=libsignal-protocol-c
-REQPKG:=$(shell pkg-config --exists $(REQPKG) && echo '$(REQPKG)')
+REQPKG:=$(shell $(PKG_CONFIG) --exists $(REQPKG) && echo '$(REQPKG)')
 ifneq ($(REQPKG),)
 	PKGCFG_C += $(SIGNAL_CFLAGS)
 	PKGCFG_L += $(SIGNAL_LDFLAGS)
