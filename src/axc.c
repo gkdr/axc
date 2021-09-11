@@ -36,6 +36,8 @@ typedef struct axc_mutexes {
   #ifndef NO_THREADS
   pthread_mutex_t * mutex_p;
   pthread_mutexattr_t * mutex_attr_p;
+  #else
+  int dummy; // to silence "warning: struct has no members [-Wpedantic]"
   #endif
 } axc_mutexes;
 
