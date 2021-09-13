@@ -1,5 +1,9 @@
 # Changelog
 
+## [x.x.x] - xxxx-xx-xx
+### Fixed
+- Compiler warnings ([#21](https://github.com/gkdr/axc/issues/21), [#29](https://github.com/gkdr/axc/pull/29)) (thanks, [@hartwork](https://github.com/hartwork)!)
+
 ## [0.3.6] - 2021-09-06
 ### Fixed
 - `pkg_config` can now be set from env like the rest of the tools. ([#28](https://github.com/gkdr/axc/pull/28)) (thanks, [@henry-nicolas](https://github.com/henry-nicolas) and Helmut Grohne!)
@@ -24,7 +28,7 @@
 
 ## [0.3.3] - 2020-07-23
 ### Added
-- Correct license headers. (thanks @henry-nicolas)
+- Correct license headers. (thanks [@henry-nicolas](https://github.com/henry-nicolas))
 - This file.
 
 ### Fixed
