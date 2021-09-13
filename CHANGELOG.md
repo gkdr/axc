@@ -28,7 +28,7 @@
 
 ## [0.3.3] - 2020-07-23
 ### Added
-- Correct license headers. (thanks @henry-nicolas)
+- Correct license headers. (thanks [@henry-nicolas](https://github.com/henry-nicolas))
 - This file.
 
 ### Fixed
