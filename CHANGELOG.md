@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.7] - to be released
+### Fixed
+- `gcc` can now be set from env like the rest of the tools. ([#30](https://github.com/gkdr/axc/pull/30))) (thanks, [@henry-nicolas](https://github.com/henry-nicolas) and Helmut Grohne!)
+
 ## [0.3.6] - 2021-09-06
 ### Fixed
 - `pkg_config` can now be set from env like the rest of the tools. ([#28](https://github.com/gkdr/axc/pull/28)) (thanks, [@henry-nicolas](https://github.com/henry-nicolas) and Helmut Grohne!)
