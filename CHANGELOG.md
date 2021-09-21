@@ -3,6 +3,7 @@
 ## [x.x.x] - xxxx-xx-xx
 ### Fixed
 - Compiler warnings ([#21](https://github.com/gkdr/axc/issues/21), [#29](https://github.com/gkdr/axc/pull/29)) (thanks, [@hartwork](https://github.com/hartwork)!)
+- `gcc` can now be set from env like the rest of the tools. ([#30](https://github.com/gkdr/axc/pull/30))) (thanks, [@henry-nicolas](https://github.com/henry-nicolas) and Helmut Grohne!)
 
 ## [0.3.6] - 2021-09-06
 ### Fixed

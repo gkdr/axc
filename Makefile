@@ -6,7 +6,7 @@ MKDIR = mkdir
 MKDIR_P = mkdir -p
 CMAKE ?= cmake
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-fPIC
-ARCH := $(shell gcc -print-multiarch)
+ARCH := $(shell $(CC) -print-multiarch)
 VER_MAJ = 0
 VERSION = 0.3.6
 
