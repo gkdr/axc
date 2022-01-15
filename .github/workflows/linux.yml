@@ -1,0 +1,65 @@
+# Copyright (c) 2022 Sebastian Pipping <sebastian@pipping.org>
+# Licensed under the GPL v2 or later
+
+name: Build for Linux
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '0 2 * * 5'  # Every Friday at 2am
+
+jobs:
+  checks:
+    name: Build for Linux (${{ matrix.libsignal }} libsignal)
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        libsignal: ['system', 'bundled']
+    steps:
+
+    - uses: actions/checkout@v2.4.0
+
+    - name: Install build dependencies (all but libsignal-protocol-c)
+      run: |-
+        set -x
+        sudo apt-get update
+        sudo apt-get install --yes --no-install-recommends -V \
+            gcovr \
+            libcmocka-dev \
+            libgcrypt20-dev \
+            libglib2.0-dev \
+            libsqlite3-dev
+
+    - name: Install build dependency libsignal-protocol-c
+      if: ${{ matrix.libsignal == 'system' }}
+      run: |-
+        sudo apt-get install --yes --no-install-recommends -V \
+            libsignal-protocol-c-dev
+
+    - name: Fetch Git submodule for build dependency libsignal-protocol-c
+      if: ${{ matrix.libsignal == 'bundled' }}
+      run: |-
+        git submodule update --init --recursive
+
+    - name: Build
+      run: |-
+        set -x
+        make -j $(nproc) all build/libaxc-nt.a
+
+    - name: Test
+      run: |-
+        make coverage  # includes tests
+
+    - name: Install
+      run: |-
+        set -x -o pipefail
+        make DESTDIR="${PWD}"/ROOT install
+        find ROOT/ -not -type d | sort | xargs ls -l
+
+    - name: Store coverage HTML report
+      uses: actions/upload-artifact@v2.3.1
+      with:
+        name: coverage_${{ matrix.libsignal }}
+        path: coverage/
+        if-no-files-found: error
