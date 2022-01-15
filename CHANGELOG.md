@@ -5,6 +5,8 @@
 - Compiler warnings ([#21](https://github.com/gkdr/axc/issues/21), [#29](https://github.com/gkdr/axc/pull/29)) (thanks, [@hartwork](https://github.com/hartwork)!)
 - `gcc` can now be set from env like the rest of the tools. ([#30](https://github.com/gkdr/axc/pull/30))) (thanks, [@henry-nicolas](https://github.com/henry-nicolas) and Helmut Grohne!)
 - Fix the build for users without libsignal-protocol-c installed system-wide ([#31](https://github.com/gkdr/axc/pull/31)) (thanks, [@hartwork](https://github.com/hartwork)!)
+### Infrastructure
+- Cover Linux build by GitHub Actions CI ([#31](https://github.com/gkdr/axc/pull/31)) (thanks, [@hartwork](https://github.com/hartwork)!)
 
 ## [0.3.6] - 2021-09-06
 ### Fixed
