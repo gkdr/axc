@@ -11,8 +11,8 @@ VER_MAJ = 0
 VERSION = 0.3.6
 
 AX_DIR=./lib/libsignal-protocol-c
-AX_BDIR=$(AX_DIR)/build/src
-AX_PATH=$(AX_BDIR)/libsignal-protocol-c.a
+AX_BDIR=$(AX_DIR)/build
+AX_PATH=$(AX_BDIR)/src/libsignal-protocol-c.a
 
 PKG_CONFIG ?= pkg-config
 GLIB_CFLAGS ?= $(shell $(PKG_CONFIG) --cflags glib-2.0)
@@ -46,9 +46,11 @@ PKGCFG_L=$(GLIB_LDFLAGS) \
 REQPKG=libsignal-protocol-c
 REQPKG:=$(shell $(PKG_CONFIG) --exists $(REQPKG) && echo '$(REQPKG)')
 ifneq ($(REQPKG),)
+	AX_PATH_AS_NEEDED =
 	PKGCFG_C += $(SIGNAL_CFLAGS)
 	PKGCFG_L += $(SIGNAL_LDFLAGS)
 else
+	AX_PATH_AS_NEEDED = $(AX_PATH)
 	HEADERS=-I$(AX_DIR)/src
 	PKGCFG_C +=$(HEADERS)
 	PKGCFG_L +=$(AX_PATH)
@@ -73,20 +75,20 @@ all: $(BDIR)/libaxc.a shared
 $(BDIR):
 	$(MKDIR_P) $@
 
-client: $(SDIR)/message_client.c $(BDIR)/axc_store.o $(BDIR)/axc_crypto.o $(BDIR)/axc.o $(AX_PATH)
+client: $(SDIR)/message_client.c $(BDIR)/axc_store.o $(BDIR)/axc_crypto.o $(BDIR)/axc.o $(AX_PATH_AS_NEEDED)
 	$(MKDIR_P) $@
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@/$@.o $(LDFLAGS)
 
-$(BDIR)/axc.o: $(SDIR)/axc.c $(BDIR)
+$(BDIR)/axc.o: $(SDIR)/axc.c $(AX_PATH_AS_NEEDED) | $(BDIR)
 	$(CC) $(PICFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(BDIR)/axc-nt.o: $(SDIR)/axc.c $(BDIR)
+$(BDIR)/axc-nt.o: $(SDIR)/axc.c $(AX_PATH_AS_NEEDED) | $(BDIR)
 	$(CC) $(PICFLAGS) $(CPPFLAGS) -DNO_THREADS -c $< -o $@
 
-$(BDIR)/axc_crypto.o: $(SDIR)/axc_crypto.c $(BDIR)
+$(BDIR)/axc_crypto.o: $(SDIR)/axc_crypto.c $(AX_PATH_AS_NEEDED) | $(BDIR)
 	$(CC) $(PICFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(BDIR)/axc_store.o: $(SDIR)/axc_store.c $(BDIR)
+$(BDIR)/axc_store.o: $(SDIR)/axc_store.c $(AX_PATH_AS_NEEDED) | $(BDIR)
 	$(CC) $(PICFLAGS) $(CPPFLAGS) -c $< -o $@
 
 $(BDIR)/libaxc.a: $(BDIR)/axc.o $(BDIR)/axc_crypto.o $(BDIR)/axc_store.o
@@ -95,7 +97,7 @@ $(BDIR)/libaxc.a: $(BDIR)/axc.o $(BDIR)/axc_crypto.o $(BDIR)/axc_store.o
 $(BDIR)/libaxc-nt.a: $(BDIR)/axc-nt.o $(BDIR)/axc_crypto.o $(BDIR)/axc_store.o
 	$(AR) rcs $@ $^
 
-$(BDIR)/libaxc.so: $(BDIR)
+$(BDIR)/libaxc.so: $(AX_PATH_AS_NEEDED) | $(BDIR)
 	$(CC) -shared -Wl,-soname,libaxc.so.$(VER_MAJ) -o $@ $(PICFLAGS) $(SDIR)/axc.c $(SDIR)/axc_crypto.c $(SDIR)/axc_store.c $(LDFLAGS) $(CPPFLAGS)
 
 $(BDIR)/libaxc.pc: $(BDIR)
@@ -110,13 +112,15 @@ $(BDIR)/libaxc.pc: $(BDIR)
 	echo 'Cflags: -I$${includedir}/axc' >> $@
 	echo 'Libs: -L$${libdir} -laxc' >> $@
 
-$(AX_PATH):
-	cd $(AX_DIR) && \
-		$(MKDIR_P) build && \
-		cd build && \
-		$(CMAKE) $(CMAKE_FLAGS) ..  && \
-		$(MAKE)
+$(AX_DIR):
+	@echo "ERROR: Git submodules are not initialized, please run e.g. 'git submodule update --init --recursive' first" >&2 ; false
 
+$(AX_BDIR): | $(AX_DIR)
+	$(MKDIR_P) $@
+
+$(AX_PATH): | $(AX_BDIR)
+	cd $(AX_BDIR) && $(CMAKE) $(CMAKE_FLAGS) ..
+	$(MAKE) -C $(AX_BDIR)
 
 shared: $(BDIR)/libaxc.so $(BDIR)/libaxc.pc
 
@@ -134,22 +138,17 @@ install: $(BDIR)
 	install -m 644 $(SDIR)/axc_store.h $(DESTDIR)/$(PREFIX)/include/axc/
 
 
-ifneq ($(REQPKG),)
 .PHONY: test
 test: test_store test_client
-else
-.PHONY: test
-test: $(AX_PATH) test_store test_client
-endif
 
 .PHONY: test_store
-test_store: $(SDIR)/axc_store.c $(SDIR)/axc_crypto.c $(TDIR)/test_store.c
+test_store: $(SDIR)/axc_store.c $(SDIR)/axc_crypto.c $(TDIR)/test_store.c $(AX_PATH_AS_NEEDED)
 	$(CC) $(TESTFLAGS) -o $(TDIR)/$@.o  $(TDIR)/test_store.c $(SDIR)/axc_crypto.c $(LDFLAGS_T)
 	-$(TDIR)/$@.o
 	find . -maxdepth 1 -iname 'test*.g*' -exec mv {} $(TDIR) \;
 
 .PHONY: test_client
-test_client: $(SDIR)/axc.c $(SDIR)/axc_crypto.c  $(SDIR)/axc_store.c $(TDIR)/test_client.c
+test_client: $(SDIR)/axc.c $(SDIR)/axc_crypto.c  $(SDIR)/axc_store.c $(TDIR)/test_client.c $(AX_PATH_AS_NEEDED)
 	$(CC) $(TESTFLAGS) -o $(TDIR)/$@.o $(SDIR)/axc_crypto.c $(TDIR)/test_client.c $(LDFLAGS_T)
 	-$(TDIR)/$@.o
 	find . -maxdepth 1 -iname 'test*.g*' -exec mv {} $(TDIR) \;
@@ -168,6 +167,6 @@ clean:
 	
 .PHONY: clean-all
 clean-all: clean
-	rm -rf client $(BDIR) $(CDIR) $(AX_DIR)/build
+	rm -rf client $(BDIR) $(CDIR) $(AX_BDIR)
 
 
