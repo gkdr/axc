@@ -243,6 +243,7 @@ void axc_bundle_destroy(axc_bundle * bundle_p) {
     axc_buf_free(bundle_p->signed_pre_key_public_serialized_p);
     axc_buf_free(bundle_p->signed_pre_key_signature_p);
     axc_buf_free(bundle_p->identity_key_public_serialized_p);
+    free(bundle_p);
   }
 }
 
@@ -423,7 +424,6 @@ void axc_context_destroy_all(axc_context * ctx_p) {
     axc_mutexes_destroy(ctx_p->mutexes_p);
 
     free(ctx_p->db_filename);
-
     free(ctx_p);
   }
 }
@@ -1104,6 +1104,10 @@ int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address 
 
 
   do {
+    if (key_l_p) {
+      signal_protocol_key_helper_key_list_free(key_l_p);
+      key_l_p = NULL;
+    }
     ret_val = signal_protocol_key_helper_generate_pre_keys(&key_l_p, new_id, 1, ctx_p->axolotl_global_context_p);
     if (ret_val) {
       err_msg = "failed to generate a new key";

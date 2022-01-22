@@ -1,4 +1,5 @@
 build/
+client/
 lib/libaxolotl-c/build
 *.gc*
 *.o

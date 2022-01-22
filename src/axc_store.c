@@ -764,6 +764,7 @@ int axc_db_pre_key_get_list(size_t amount, axc_context * axc_ctx_p, axc_buf_list
   }
 
   *list_head_pp = axc_buf_list_item_get_next(head_p);
+  axc_buf_list_item_set_next(head_p, NULL);
   ret_val = 0;
 
 cleanup:
@@ -771,8 +772,8 @@ cleanup:
     axc_buf_free(serialized_keypair_data_p);
     SIGNAL_UNREF(pre_key_p);
     axc_buf_free(pre_key_public_serialized_p);
-    axc_buf_list_free(head_p);
   }
+  axc_buf_list_free(head_p);
 
   db_conn_cleanup(db_p, pstmt_p, err_msg, __func__, axc_ctx_p);
   return ret_val;
