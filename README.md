@@ -1,8 +1,8 @@
 # axc 0.3.7
-Client lib for [libsignal-c](https://github.com/WhisperSystems/libsignal-protocol-c), implementing the needed database and crypto interfaces using SQLite and gcrypt.
-Initially, the library's name was _libaxolotl_, hence the name.
+Client lib for [libsignal-protocol-c](https://github.com/WhisperSystems/libsignal-protocol-c), implementing the needed database and crypto interfaces using SQLite and gcrypt.
+Initially, the libsignal-protocol-c project was named _libaxolotl_, hence the name `axc`.
 
-Additionally it provides utility functions for common use cases like encrypting and decrypting, ultimately making direct use of libsignal unnecessary.
+Additionally it provides utility functions for common use cases like encrypting and decrypting, ultimately making direct use of libsignal-protocol-c unnecessary.
 
 ## Dependencies
 * gcrypt for the crypto (`libgcrypt20-dev`)
