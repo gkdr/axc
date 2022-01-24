@@ -5,12 +5,16 @@ Initially, the libsignal-protocol-c project was named _libaxolotl_, hence the na
 Additionally it provides utility functions for common use cases like encrypting and decrypting, ultimately making direct use of libsignal-protocol-c unnecessary.
 
 ## Dependencies
+* pkg-config (`pkg-config`) or pkgconf (`pkgconf`)
+* glib2 (`libglib2.0-dev`)
+* libsignal-protocol-c (`libsignal-protocol-c-dev`)
 * gcrypt for the crypto (`libgcrypt20-dev`)
 * SQLite for the stores (`libsqlite3-dev`)
+* GNU make (`make`)
 
 Optional:
-* [cmocka](https://cmocka.org/) for testing (`make test`)
-* [gcovr](http://gcovr.com/) for a coverage report (`make coverage`)
+* [cmocka](https://cmocka.org/) (`libcmocka-dev`) for testing (`make test`)
+* [gcovr](http://gcovr.com/) (`gcovr`) for a coverage report (`make coverage`)
 
 ## Installation
 First, you should pull the _libsignal_ submodule using `git submodule update --init`.
