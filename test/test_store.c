@@ -20,7 +20,7 @@
 sqlite3 * db_p;
 sqlite3_stmt * pstmt_p;
 
-char * db_filename = "test/test.sqlite";
+char * db_filename = "test.sqlite";
 axc_context * ctx_global_p;
 
 signal_protocol_address addr_alice_42 = {.name = "alice", .name_len = 5, .device_id = 42};
@@ -381,8 +381,8 @@ void test_db_session_get_sub_device_sessions_should_find_and_return_correct_numb
 void test_db_session_contains_should_return_correct_values(void ** state) {
   (void) state;
 
-  char * a_db_filename = "test/a.sqlite";
-  char * b_db_filename = "test/b.sqlite";
+  char * a_db_filename = "a.sqlite";
+  char * b_db_filename = "b.sqlite";
 
   axc_context * ctx_a_p = (void *) 0;
   axc_context * ctx_b_p = (void *) 0;
