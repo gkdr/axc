@@ -11,16 +11,18 @@ on:
 
 jobs:
   checks:
-    name: Build for Linux (${{ matrix.libsignal }} libsignal)
+    name: Build for Linux (shared=${{ matrix.BUILD_SHARED_LIBS }}, pthreads=${{ matrix.AXC_WITH_PTHREADS }})
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
-        libsignal: ['system', 'bundled']
+        BUILD_SHARED_LIBS: ['ON', 'OFF']
+        AXC_WITH_PTHREADS: ['ON', 'OFF']
     steps:
 
     - uses: actions/checkout@v2.4.0
 
-    - name: Install build dependencies (all but libsignal-protocol-c)
+    - name: Install build dependencies
       run: |-
         set -x
         sudo apt-get update
@@ -29,37 +31,41 @@ jobs:
             libcmocka-dev \
             libgcrypt20-dev \
             libglib2.0-dev \
-            libsqlite3-dev
+            libsignal-protocol-c-dev \
+            libsqlite3-dev \
+            ninja-build
 
-    - name: Install build dependency libsignal-protocol-c
-      if: ${{ matrix.libsignal == 'system' }}
+    - name: Configure
       run: |-
-        sudo apt-get install --yes --no-install-recommends -V \
-            libsignal-protocol-c-dev
-
-    - name: Fetch Git submodule for build dependency libsignal-protocol-c
-      if: ${{ matrix.libsignal == 'bundled' }}
-      run: |-
-        git submodule update --init --recursive
+        set -x
+        cmake \
+          -B build \
+          -G Ninja \
+          -DAXC_WITH_PTHREADS=${{ matrix.AXC_WITH_PTHREADS }} \
+          -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} \
+          -D_AXC_WITH_COVERAGE=ON
 
     - name: Build
       run: |-
         set -x
-        make -j $(nproc) all build/libaxc-nt.a
+        ninja -v -C build all
+        cat build/libaxc.pc
 
     - name: Test
       run: |-
-        make coverage  # includes tests
+        set -x
+        CTEST_OUTPUT_ON_FAILURE=1 ninja -C build test
+        ninja -C build coverage
 
     - name: Install
       run: |-
         set -x -o pipefail
-        make DESTDIR="${PWD}"/ROOT install
+        DESTDIR="${PWD}"/ROOT ninja -v -C build install
         find ROOT/ -not -type d | sort | xargs ls -l
 
     - name: Store coverage HTML report
       uses: actions/upload-artifact@v2.3.1
       with:
-        name: coverage_${{ matrix.libsignal }}
-        path: coverage/
+        name: axc_coverage_shared_${{ matrix.BUILD_SHARED_LIBS }}_pthreads_${{ matrix.AXC_WITH_PTHREADS }}
+        path: build/coverage*.html
         if-no-files-found: error
