@@ -20,7 +20,6 @@
 sqlite3 * db_p;
 sqlite3_stmt * pstmt_p;
 
-//axc_settings settings = {.db_filename = "test/test.sqlite"};
 char * db_filename = "test/test.sqlite";
 axc_context * ctx_global_p;
 
@@ -51,6 +50,8 @@ int db_setup_internal(void **state) {
 }
 
 int db_setup(void **state) {
+  (void) state;
+
   db_setup_internal((void *) 0);
 
   assert_int_equal(axc_db_create(ctx_global_p), 0);
@@ -418,7 +419,8 @@ void test_db_session_contains_should_return_correct_values(void ** state) {
                                             ctx_a_p),
                     0);
 
-  axc_buf * msg_buf_p = axc_buf_create("hello", strlen("hello") + 1);
+  const char * data = "hello";
+  axc_buf * msg_buf_p = axc_buf_create((uint8_t *)data, strlen(data) + 1);
   assert_ptr_not_equal(msg_buf_p, (void *) 0);
 
   axc_buf * ct_buf_p;
@@ -579,13 +581,10 @@ void test_db_pre_key_get_list(void ** state) {
 void test_db_pre_key_get_max_id(void ** state) {
   (void) state;
 
-  uint32_t id = 10;
-  int ret_val = axc_db_pre_key_get_max_id(ctx_global_p, &id);
-
   assert_int_equal(axc_init(ctx_global_p), 0);
   assert_int_equal(axc_install(ctx_global_p), 0);
 
-
+  uint32_t id = 10;
   assert_int_equal(axc_db_pre_key_get_max_id(ctx_global_p, &id), 0);
   assert_int_equal(id, AXC_PRE_KEYS_AMOUNT - 1); // ids start with 0
 }
@@ -700,7 +699,7 @@ void test_db_identity_get_local_registration_id(void **state) {
 
   assert_int_equal(axc_db_identity_set_local_registration_id(id, ctx_global_p), 0);
 
-  int result = 0;
+  uint32_t result = 0;
   assert_int_equal(axc_db_identity_get_local_registration_id(ctx_global_p, &result), 0);
   assert_int_equal(id, result);
 }

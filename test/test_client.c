@@ -47,6 +47,8 @@ int global_teardown(void ** state) {
 }
 
 int client_setup(void **state) {
+  (void) state;
+
   ctx_global_p = (void *) 0;
 
   assert_int_equal(axc_context_create(&ctx_global_p), 0);
@@ -58,6 +60,8 @@ int client_setup(void **state) {
 }
 
 int client_teardown(void ** state) {
+  (void) state;
+
   axc_crypto_teardown();
   axc_cleanup(ctx_global_p);
   ctx_global_p = (void *) 0;
@@ -110,7 +114,8 @@ int client_setup_sessions(void ** state) {
                                             ctx_a_p),
                     0);
 
-  axc_buf * msg_buf_p = axc_buf_create("hello", strlen("hello") + 1);
+  const char * data = "hello";
+  axc_buf * msg_buf_p = axc_buf_create((uint8_t *) data, strlen(data) + 1);
   assert_ptr_not_equal(msg_buf_p, (void *) 0);
 
   axc_buf * ct_buf_p;
@@ -201,6 +206,8 @@ void test_recursive_mutex_unlock(void **state){
 }
 
 void test_install_should_generate_necessary_data(void **state) {
+  (void) state;
+
   assert_int_equal(axc_install(ctx_global_p), 0);
 
   sqlite3 * db_p = (void *) 0;
@@ -250,11 +257,12 @@ void test_install_should_not_do_anything_if_already_initialiased(void **state) {
   (void) state;
 
   assert_int_equal(axc_install(ctx_global_p), 0);
-  int reg_id_1 = 0;
+  
+  uint32_t reg_id_1 = 0;
   assert_int_equal(axc_db_identity_get_local_registration_id(ctx_global_p, &reg_id_1), 0);
   assert_int_not_equal(reg_id_1, 0);
 
-  int reg_id_2 = 0;
+  uint32_t reg_id_2 = 0;
   assert_int_equal(axc_install(ctx_global_p), 0);
   assert_int_equal(axc_db_identity_get_local_registration_id(ctx_global_p, &reg_id_2), 0);
   assert_int_not_equal(reg_id_2, 0);
@@ -266,13 +274,14 @@ void test_install_should_reset_if_needed(void **state) {
   (void) state;
 
   assert_int_equal(axc_install(ctx_global_p), 0);
-  int reg_id_1 = 0;
+  
+  uint32_t reg_id_1 = 0;
   assert_int_equal(axc_db_identity_get_local_registration_id(ctx_global_p, &reg_id_1), 0);
   assert_int_not_equal(reg_id_1, 0);
 
   assert_int_equal(axc_db_init_status_set(0, ctx_global_p), 0);
 
-  int reg_id_2 = 0;
+  uint32_t reg_id_2 = 0;
   assert_int_equal(axc_install(ctx_global_p), 0);
   assert_int_equal(axc_db_identity_get_local_registration_id(ctx_global_p, &reg_id_2), 0);
   assert_int_not_equal(reg_id_2, 0);
@@ -370,7 +379,8 @@ void test_session_exists_any(void ** state) {
                                             ctx_a_p),
                     0);
 
-  axc_buf * msg_buf_p = axc_buf_create("hello", strlen("hello") + 1);
+  const char * data = "hello";
+  axc_buf * msg_buf_p = axc_buf_create((uint8_t *) data, strlen(data) + 1);
   assert_ptr_not_equal(msg_buf_p, (void *) 0);
 
   axc_buf * ct_buf_p;
@@ -394,7 +404,7 @@ void test_session_from_bundle_and_handle_prekey_message(void **state) {
   (void) state;
 
   axc_address addr_bob = {.name = "bob", .name_len = 3, .device_id = 0};
-  assert_int_equal(axc_db_identity_get_local_registration_id(ctx_b_p, &(addr_bob.device_id)), 0);
+  assert_int_equal(axc_db_identity_get_local_registration_id(ctx_b_p, (uint32_t *)&(addr_bob.device_id)), 0);
   assert_int_equal(axc_session_exists_initiated(&addr_bob, ctx_a_p), 0);
 
   uint32_t pre_key_id_bob = 10;
@@ -514,7 +524,8 @@ void test_session_exists_prekeys(void ** state) {
 
   assert_int_equal(axc_session_exists_initiated(&addr_bob, ctx_a_p), 1);
 
-  axc_buf * msg_buf_p = axc_buf_create("hello", strlen("hello") + 1);
+  const char * data = "hello";
+  axc_buf * msg_buf_p = axc_buf_create((uint8_t *) data, strlen(data) + 1);
   assert_ptr_not_equal(msg_buf_p, (void *) 0);
 
   axc_buf * ct_buf_p;
@@ -538,7 +549,8 @@ void test_session_exists_prekeys(void ** state) {
   axc_buf_free(ct_buf_p);
   axc_buf_free(pt_buf_p);
 
-  msg_buf_p = axc_buf_create("hello 234", strlen("hello 234") + 1);
+  const char * other_data = "hello 234";
+  msg_buf_p = axc_buf_create((uint8_t *) other_data, strlen(other_data) + 1);
   assert_ptr_not_equal(msg_buf_p, (void *) 0);
 
   assert_int_equal(axc_message_encrypt_and_serialize(msg_buf_p, &addr_bob, ctx_a_p, &ct_buf_p), 0);
