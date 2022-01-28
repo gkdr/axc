@@ -64,7 +64,7 @@ CPPFLAGS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -D_D
 CFLAGS += $(PKGCFG_C) -std=c11 -g -Wall -Wextra -Wpedantic \
 	  -Wstrict-overflow -fno-strict-aliasing -funsigned-char \
 	  -fno-builtin-memset -fstack-protector-strong -Wformat -Werror=format-security
-TESTFLAGS=$(PKGCFG_C) -g -O0 --coverage -fstack-protector-strong -Wformat -Werror=format-security
+TESTFLAGS=$(PKGCFG_C) -g -O0 --coverage -Wall -Wextra -Wpedantic -Wstrict-overflow -fstack-protector-strong -Wformat -Werror=format-security
 LDFLAGS += -pthread -ldl $(PKGCFG_L) -lm
 LDFLAGS_T= -lcmocka $(LDFLAGS)
 PICFLAGS=-fPIC $(CFLAGS)
