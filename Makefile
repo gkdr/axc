@@ -8,7 +8,7 @@ CMAKE ?= cmake
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-fPIC
 ARCH := $(shell $(CC) -print-multiarch)
 VER_MAJ = 0
-VERSION = 0.3.6
+VERSION = 0.3.7
 
 AX_DIR=./lib/libsignal-protocol-c
 AX_BDIR=$(AX_DIR)/build
