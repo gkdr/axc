@@ -470,40 +470,14 @@ int axc_init(axc_context * ctx_p) {
   axc_mutexes * mutexes_p = (void *) 0;
   signal_protocol_store_context * store_context_p = (void *) 0;
 
-  signal_protocol_session_store session_store = {
-      .load_session_func = &axc_db_session_load,
-      .get_sub_device_sessions_func = &axc_db_session_get_sub_device_sessions,
-      .store_session_func = &axc_db_session_store,
-      .contains_session_func = &axc_db_session_contains,
-      .delete_session_func = &axc_db_session_delete,
-      .delete_all_sessions_func = &axc_db_session_delete_all,
-      .destroy_func = &axc_db_session_destroy_store_ctx,
-      .user_data = ctx_p
-  };
-  signal_protocol_pre_key_store pre_key_store = {
-      .load_pre_key = &axc_db_pre_key_load,
-      .store_pre_key = &axc_db_pre_key_store,
-      .contains_pre_key = &axc_db_pre_key_contains,
-      .remove_pre_key = &axc_db_pre_key_remove,
-      .destroy_func = &axc_db_pre_key_destroy_ctx,
-      .user_data = ctx_p
-  };
-  signal_protocol_signed_pre_key_store signed_pre_key_store = {
-      .load_signed_pre_key = &axc_db_signed_pre_key_load,
-      .store_signed_pre_key = &axc_db_signed_pre_key_store,
-      .contains_signed_pre_key = &axc_db_signed_pre_key_contains,
-      .remove_signed_pre_key = &axc_db_signed_pre_key_remove,
-      .destroy_func = &axc_db_signed_pre_key_destroy_ctx,
-      .user_data = ctx_p
-  };
-  signal_protocol_identity_key_store identity_key_store = {
-      .get_identity_key_pair = &axc_db_identity_get_key_pair,
-      .get_local_registration_id = &axc_db_identity_get_local_registration_id,
-      .save_identity = &axc_db_identity_save,
-      .is_trusted_identity = &axc_db_identity_always_trusted,
-      .destroy_func = &axc_db_identity_destroy_ctx,
-      .user_data = ctx_p
-  };
+  signal_protocol_session_store session_store = axc_session_store_tmpl;
+  session_store.user_data = ctx_p;
+  signal_protocol_pre_key_store pre_key_store = axc_pre_key_store_tmpl;
+  pre_key_store.user_data = ctx_p;
+  signal_protocol_signed_pre_key_store signed_pre_key_store = axc_signed_pre_key_store_tmpl;
+  signed_pre_key_store.user_data = ctx_p;
+  signal_protocol_identity_key_store identity_key_store = axc_identity_key_store_tmpl;
+  identity_key_store.user_data = ctx_p;
 
   // init mutexes
   ret_val = axc_mutexes_create_and_init(&mutexes_p);
@@ -523,20 +497,9 @@ int axc_init(axc_context * ctx_p) {
   axc_log(ctx_p, AXC_LOG_DEBUG, "%s: created and set axolotl context", __func__);
 
   // 2. init and set crypto provider
-  signal_crypto_provider crypto_provider = {
-      .random_func = random_bytes,
-      .hmac_sha256_init_func = hmac_sha256_init,
-      .hmac_sha256_update_func = hmac_sha256_update,
-      .hmac_sha256_final_func = hmac_sha256_final,
-      .hmac_sha256_cleanup_func = hmac_sha256_cleanup,
-      .sha512_digest_init_func = sha512_digest_init,
-      .sha512_digest_update_func = sha512_digest_update,
-      .sha512_digest_final_func = sha512_digest_final,
-      .sha512_digest_cleanup_func = sha512_digest_cleanup,
-      .encrypt_func = aes_encrypt,
-      .decrypt_func = aes_decrypt,
-      .user_data = ctx_p
-  };
+  signal_crypto_provider crypto_provider = axc_crypto_provider_tmpl;
+  crypto_provider.user_data = ctx_p;
+
   if (signal_context_set_crypto_provider(ctx_p->axolotl_global_context_p, &crypto_provider)) {
     err_msg = "failed to set crypto provider";
     ret_val = -1;

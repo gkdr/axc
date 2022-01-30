@@ -45,6 +45,7 @@
 #define IDENTITY_KEY_STORE_KEY_NAME "key"
 #define IDENTITY_KEY_STORE_KEY_LEN_NAME "key_len"
 #define IDENTITY_KEY_STORE_TRUSTED_NAME "trusted"
+#define IDENTITY_KEY_STORE_DEVICE_ID_NAME "device_id"
 #define SETTINGS_STORE_TABLE_NAME "settings"
 #define SETTINGS_STORE_NAME_NAME "name"
 #define SETTINGS_STORE_PROPERTY_NAME "property"
@@ -164,7 +165,7 @@ void db_exec_quick(const char stmt[], void * user_data_p) {
 }
 
 int axc_db_create(axc_context * axc_ctx_p) {
-  const char stmt[] =  "BEGIN TRANSACTION;"
+  static const char stmt[] =  "BEGIN TRANSACTION;"
                              "CREATE TABLE IF NOT EXISTS " SESSION_STORE_TABLE_NAME "("
                                SESSION_STORE_NAME_NAME " TEXT NOT NULL, "
                                SESSION_STORE_NAME_LEN_NAME " INTEGER NOT NULL, "
@@ -184,7 +185,8 @@ int axc_db_create(axc_context * axc_ctx_p) {
                                IDENTITY_KEY_STORE_NAME_NAME " TEXT NOT NULL PRIMARY KEY, "
                                IDENTITY_KEY_STORE_KEY_NAME " BLOB NOT NULL, "
                                IDENTITY_KEY_STORE_KEY_LEN_NAME " INTEGER NOT NULL, "
-                               IDENTITY_KEY_STORE_TRUSTED_NAME " INTEGER NOT NULL);"
+                               IDENTITY_KEY_STORE_TRUSTED_NAME " INTEGER NOT NULL, "
+                               IDENTITY_KEY_STORE_DEVICE_ID_NAME " INTEGER NOT NULL);"
                              "CREATE TABLE IF NOT EXISTS " SETTINGS_STORE_TABLE_NAME "("
                                SETTINGS_STORE_NAME_NAME " TEXT NOT NULL PRIMARY KEY, "
                                SETTINGS_STORE_PROPERTY_NAME " INTEGER NOT NULL);"
@@ -215,7 +217,7 @@ int axc_db_create(axc_context * axc_ctx_p) {
  * @param axc_ctx_p Pointer to the axc context.
  */
 int axc_db_destroy(axc_context * axc_ctx_p) {
-  const char stmt[] = "BEGIN TRANSACTION;"
+  static const char stmt[] = "BEGIN TRANSACTION;"
                       "DROP TABLE IF EXISTS " SESSION_STORE_TABLE_NAME ";"
                       "DROP TABLE IF EXISTS " PRE_KEY_STORE_TABLE_NAME ";"
                       "DROP TABLE IF EXISTS " SIGNED_PRE_KEY_STORE_TABLE_NAME ";"
@@ -245,7 +247,7 @@ int axc_db_destroy(axc_context * axc_ctx_p) {
 int axc_db_property_set(const char * name, const int val, axc_context * axc_ctx_p) {
   // 1 - name of property
   // 2 - value
-  const char stmt[] = "INSERT OR REPLACE INTO " SETTINGS_STORE_TABLE_NAME " VALUES (?1, ?2);";
+  static const char stmt[] = "INSERT OR REPLACE INTO " SETTINGS_STORE_TABLE_NAME " VALUES (?1, ?2);";
 
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
@@ -268,7 +270,7 @@ int axc_db_property_set(const char * name, const int val, axc_context * axc_ctx_
 }
 
 int axc_db_property_get(const char * name, int * val_p, axc_context * axc_ctx_p) {
-  const char stmt[] = "SELECT * FROM " SETTINGS_STORE_TABLE_NAME " WHERE name IS ?1;";
+  static const char stmt[] = "SELECT * FROM " SETTINGS_STORE_TABLE_NAME " WHERE name IS ?1;";
 
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
@@ -311,7 +313,7 @@ int axc_db_init_status_get(int * init_status_p, axc_context * axc_ctx_p) {
 
 // session store impl
 int axc_db_session_load(signal_buffer ** record, signal_buffer ** user_record, const signal_protocol_address * address, void * user_data) {
-  const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME
+  static const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME
                       " WHERE " SESSION_STORE_NAME_NAME " IS ?1"
                       " AND " SESSION_STORE_DEVICE_ID_NAME " IS ?2;";
 
@@ -356,7 +358,7 @@ int axc_db_session_load(signal_buffer ** record, signal_buffer ** user_record, c
 }
 
 int axc_db_session_get_sub_device_sessions(signal_int_list ** sessions, const char * name, size_t name_len, void * user_data) {
-  const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME " WHERE " SESSION_STORE_NAME_NAME " IS ?1;";
+  static const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME " WHERE " SESSION_STORE_NAME_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -404,7 +406,7 @@ cleanup:
 }
 
 int axc_db_session_store(const signal_protocol_address *address, uint8_t *record, size_t record_len, uint8_t *user_record, size_t user_record_len, void *user_data) {
-  const char stmt[] = "INSERT OR REPLACE INTO " SESSION_STORE_TABLE_NAME " VALUES (:name, :name_len, :device_id, :session_record, :record_len);";
+  static const char stmt[] = "INSERT OR REPLACE INTO " SESSION_STORE_TABLE_NAME " VALUES (:name, :name_len, :device_id, :session_record, :record_len);";
 
   (void) user_record;
   (void) user_record_len;
@@ -442,7 +444,7 @@ int axc_db_session_store(const signal_protocol_address *address, uint8_t *record
 }
 
 int axc_db_session_contains(const signal_protocol_address * address, void * user_data) {
-  const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME
+  static const char stmt[] = "SELECT * FROM " SESSION_STORE_TABLE_NAME
                       " WHERE " SESSION_STORE_NAME_NAME " IS ?1"
                       " AND " SESSION_STORE_DEVICE_ID_NAME " IS ?2;";
 
@@ -478,7 +480,7 @@ int axc_db_session_contains(const signal_protocol_address * address, void * user
 }
 
 int axc_db_session_delete(const signal_protocol_address * address, void * user_data) {
-  const char stmt[] = "DELETE FROM " SESSION_STORE_TABLE_NAME
+  static const char stmt[] = "DELETE FROM " SESSION_STORE_TABLE_NAME
                       " WHERE " SESSION_STORE_NAME_NAME " IS ?1"
                       " AND " SESSION_STORE_DEVICE_ID_NAME " IS ?2;";
 
@@ -512,7 +514,7 @@ int axc_db_session_delete(const signal_protocol_address * address, void * user_d
 }
 
 int axc_db_session_delete_all(const char * name, size_t name_len, void * user_data) {
-  const char stmt[] = "DELETE FROM " SESSION_STORE_TABLE_NAME " WHERE " SESSION_STORE_NAME_NAME " IS ?1;";
+  static const char stmt[] = "DELETE FROM " SESSION_STORE_TABLE_NAME " WHERE " SESSION_STORE_NAME_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -545,7 +547,7 @@ void axc_db_session_destroy_store_ctx(void * user_data) {
 
 // pre key store impl
 int axc_db_pre_key_load(signal_buffer ** record, uint32_t pre_key_id, void * user_data) {
-  const char stmt[] = "SELECT * FROM " PRE_KEY_STORE_TABLE_NAME " WHERE " PRE_KEY_STORE_ID_NAME " IS ?1;";
+  static const char stmt[] = "SELECT * FROM " PRE_KEY_STORE_TABLE_NAME " WHERE " PRE_KEY_STORE_ID_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -581,7 +583,7 @@ int axc_db_pre_key_load(signal_buffer ** record, uint32_t pre_key_id, void * use
 }
 
 int axc_db_pre_key_store(uint32_t pre_key_id, uint8_t * record, size_t record_len, void * user_data) {
-  const char stmt[] = "INSERT OR REPLACE INTO " PRE_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3);";
+  static const char stmt[] = "INSERT OR REPLACE INTO " PRE_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3);";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -608,9 +610,9 @@ int axc_db_pre_key_store(uint32_t pre_key_id, uint8_t * record, size_t record_le
 }
 
 int axc_db_pre_key_store_list(signal_protocol_key_helper_pre_key_list_node * pre_keys_head, axc_context * axc_ctx_p) {
-  const char stmt_begin[] = "BEGIN TRANSACTION;";
-  const char stmt[] = "INSERT OR REPLACE INTO " PRE_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3);";
-  const char stmt_commit[] = "COMMIT TRANSACTION;";
+  static const char stmt_begin[] = "BEGIN TRANSACTION;";
+  static const char stmt[] = "INSERT OR REPLACE INTO " PRE_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3);";
+  static const char stmt_commit[] = "COMMIT TRANSACTION;";
 
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
@@ -681,7 +683,7 @@ int axc_db_pre_key_store_list(signal_protocol_key_helper_pre_key_list_node * pre
 }
 
 int axc_db_pre_key_get_list(size_t amount, axc_context * axc_ctx_p, axc_buf_list_item ** list_head_pp) {
-  const char stmt[] = "SELECT * FROM " PRE_KEY_STORE_TABLE_NAME
+  static const char stmt[] = "SELECT * FROM " PRE_KEY_STORE_TABLE_NAME
                       " ORDER BY " PRE_KEY_STORE_ID_NAME " ASC LIMIT ?1;";
 
   int ret_val = -1;
@@ -780,7 +782,7 @@ cleanup:
 }
 
 int axc_db_pre_key_contains(uint32_t pre_key_id, void * user_data) {
-  const char stmt[] = "SELECT * FROM " PRE_KEY_STORE_TABLE_NAME " WHERE " PRE_KEY_STORE_ID_NAME " IS ?1;";
+  static const char stmt[] = "SELECT * FROM " PRE_KEY_STORE_TABLE_NAME " WHERE " PRE_KEY_STORE_ID_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -868,7 +870,7 @@ int axc_db_pre_key_get_count(axc_context * axc_ctx_p, size_t * count_p) {
 }
 
 int axc_db_pre_key_remove(uint32_t pre_key_id, void * user_data) {
-  const char stmt[] = "DELETE FROM " PRE_KEY_STORE_TABLE_NAME " WHERE " PRE_KEY_STORE_ID_NAME " IS ?1;";
+  static const char stmt[] = "DELETE FROM " PRE_KEY_STORE_TABLE_NAME " WHERE " PRE_KEY_STORE_ID_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -903,7 +905,7 @@ void axc_db_pre_key_destroy_ctx(void * user_data) {
 
 // signed pre key store impl
 int axc_db_signed_pre_key_load(signal_buffer ** record, uint32_t signed_pre_key_id, void * user_data) {
-  const char stmt[] = "SELECT * FROM " SIGNED_PRE_KEY_STORE_TABLE_NAME " WHERE " SIGNED_PRE_KEY_STORE_ID_NAME " IS ?1;";
+  static const char stmt[] = "SELECT * FROM " SIGNED_PRE_KEY_STORE_TABLE_NAME " WHERE " SIGNED_PRE_KEY_STORE_ID_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -939,7 +941,7 @@ int axc_db_signed_pre_key_load(signal_buffer ** record, uint32_t signed_pre_key_
 }
 
 int axc_db_signed_pre_key_store(uint32_t signed_pre_key_id, uint8_t * record, size_t record_len, void * user_data) {
-  const char stmt[] = "INSERT OR REPLACE INTO " SIGNED_PRE_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3);";
+  static const char stmt[] = "INSERT OR REPLACE INTO " SIGNED_PRE_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3);";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -966,7 +968,7 @@ int axc_db_signed_pre_key_store(uint32_t signed_pre_key_id, uint8_t * record, si
 }
 
 int axc_db_signed_pre_key_contains(uint32_t signed_pre_key_id, void * user_data) {
-  const char stmt[] = "SELECT * FROM " SIGNED_PRE_KEY_STORE_TABLE_NAME " WHERE " SIGNED_PRE_KEY_STORE_ID_NAME " IS ?1;";
+  static const char stmt[] = "SELECT * FROM " SIGNED_PRE_KEY_STORE_TABLE_NAME " WHERE " SIGNED_PRE_KEY_STORE_ID_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -995,7 +997,7 @@ int axc_db_signed_pre_key_contains(uint32_t signed_pre_key_id, void * user_data)
 }
 
 int axc_db_signed_pre_key_remove(uint32_t signed_pre_key_id, void * user_data) {
-  const char stmt[] = "DELETE FROM " SIGNED_PRE_KEY_STORE_TABLE_NAME " WHERE " SIGNED_PRE_KEY_STORE_ID_NAME " IS ?1;";
+  static const char stmt[] = "DELETE FROM " SIGNED_PRE_KEY_STORE_TABLE_NAME " WHERE " SIGNED_PRE_KEY_STORE_ID_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -1036,8 +1038,9 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
   // 1 - name ("public" or "private")
   // 2 - key blob
   // 3 - length of the key
-  // 4 - trusted (1 for true, 0 for false)
-  const char stmt[] = "INSERT INTO " IDENTITY_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3, ?4);";
+  // 4 - trusted (1 for true, 0 for false, 2 for OWN_KEY)
+  // 5 - device_id (0, for identity key is already marked with OWN_KEY)
+  static const char stmt[] = "INSERT INTO " IDENTITY_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3, ?4, ?5);";
 
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
@@ -1081,6 +1084,12 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
   }
 
   if (sqlite3_bind_int(pstmt_p, 4, OWN_KEY)) {
+    err_msg = "Failed to bind";
+    ret_val = -24;
+    goto cleanup;
+  }
+
+  if (sqlite3_bind_int(pstmt_p, 5, 0)) {
     err_msg = "Failed to bind";
     ret_val = -24;
     goto cleanup;
@@ -1138,6 +1147,12 @@ int axc_db_identity_set_key_pair(const ratchet_identity_key_pair * key_pair_p, a
     goto cleanup;
   }
 
+  if (sqlite3_bind_int(pstmt_p, 5, 0)) {
+    err_msg = "Failed to bind";
+    ret_val = -24;
+    goto cleanup;
+  }
+
   if (sqlite3_step(pstmt_p) != SQLITE_DONE) {
     err_msg = "Failed to execute statement";
     ret_val = -3;
@@ -1163,7 +1178,7 @@ cleanup:
 
 
 int axc_db_identity_get_key_pair(signal_buffer ** public_data, signal_buffer ** private_data, void * user_data) {
-  const char stmt[] = "SELECT * FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1;";
+  static const char stmt[] = "SELECT * FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -1257,7 +1272,7 @@ int axc_db_identity_set_local_registration_id(const uint32_t reg_id, axc_context
 }
 
 int axc_db_identity_get_local_registration_id(void * user_data, uint32_t * registration_id) {
-  const char stmt[] = "SELECT * FROM " SETTINGS_STORE_TABLE_NAME " WHERE " SETTINGS_STORE_NAME_NAME " IS ?1;";
+  static const char stmt[] = "SELECT * FROM " SETTINGS_STORE_TABLE_NAME " WHERE " SETTINGS_STORE_NAME_NAME " IS ?1;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
@@ -1291,9 +1306,9 @@ int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t * key_d
   // 2 - key blob
   // 3 - length of the key
   // 4 - trusted (1 for true, 0 for false)
-  char save_stmt[] = "INSERT OR REPLACE INTO " IDENTITY_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3, ?4);";
-  char del_stmt[] = "DELETE FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1;";
-  char * stmt = (void *) 0;
+  static const char save_stmt[] = "INSERT OR REPLACE INTO " IDENTITY_KEY_STORE_TABLE_NAME " VALUES (?1, ?2, ?3, ?4, ?5);";
+  static const char del_stmt[] = "DELETE FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1 AND " IDENTITY_KEY_STORE_DEVICE_ID_NAME " IS ?2;";
+  const char * stmt = (void *) 0;
 
   if (key_data) {
     stmt = save_stmt;
@@ -1324,6 +1339,13 @@ int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t * key_d
       db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
       return -24;
     }
+    if(sqlite3_bind_int(pstmt_p, 5, addr_p->device_id)) {
+      db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
+      return -25;
+    }
+  } else if (sqlite3_bind_int(pstmt_p, 2, addr_p->device_id)) {
+      db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
+      return -25;
   }
 
   if (db_exec_single_change(db_p, pstmt_p, axc_ctx_p)) return -3;
@@ -1332,21 +1354,25 @@ int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t * key_d
   return 0;
 }
 
-int axc_db_identity_is_trusted(const char * name, size_t name_len, uint8_t * key_data, size_t key_len, void * user_data) {
-  const char stmt[] = "SELECT * FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1;";
+int axc_db_identity_is_trusted(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len, void * user_data) {
+  static const char stmt[] = "SELECT * FROM " IDENTITY_KEY_STORE_TABLE_NAME " WHERE " IDENTITY_KEY_STORE_NAME_NAME " IS ?1 AND " IDENTITY_KEY_STORE_DEVICE_ID_NAME " IS ?2;";
 
   axc_context * axc_ctx_p = (axc_context *) user_data;
   sqlite3 * db_p = (void *) 0;
   sqlite3_stmt * pstmt_p = (void *) 0;
-  signal_buffer * key_record = (void *) 0;
   int step_result = 0;
   size_t record_len = 0;
 
   if (db_conn_open(&db_p, &pstmt_p, stmt, user_data)) return -1;
 
-  if (sqlite3_bind_text(pstmt_p, 1, name, -1, SQLITE_TRANSIENT)) {
+  if (sqlite3_bind_text(pstmt_p, 1, addr_p->name, -1, SQLITE_TRANSIENT)) {
     db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
     return -21;
+  }
+
+  if (sqlite3_bind_int(pstmt_p, 2, addr_p->device_id)) {
+    db_conn_cleanup(db_p, pstmt_p, "Failed to bind", __func__, axc_ctx_p);
+    return -25;
   }
 
   step_result = sqlite3_step(pstmt_p);
@@ -1363,25 +1389,17 @@ int axc_db_identity_is_trusted(const char * name, size_t name_len, uint8_t * key
       return 0;
     }
 
-    key_record = signal_buffer_create(sqlite3_column_blob(pstmt_p, 1), record_len);
-    if (key_record == 0) {
-      db_conn_cleanup(db_p, pstmt_p, "Buffer could not be initialised", __func__, axc_ctx_p);
-      return -3;
-    }
-
-    if (memcmp(key_data, signal_buffer_data(key_record), key_len)) {
+    // key_len should equal to record_len here
+    if (memcmp(key_data, sqlite3_column_blob(pstmt_p, 1), key_len)) {
       db_conn_cleanup(db_p, pstmt_p, "Key data does not match", __func__, axc_ctx_p);
     }
 
     db_conn_cleanup(db_p, pstmt_p, (void *) 0, __func__, axc_ctx_p);
-    signal_buffer_bzero_free(key_record);
     return 1;
   } else {
     db_conn_cleanup(db_p, pstmt_p, "Failed executing SQL statement", __func__, axc_ctx_p);
     return -32;
   }
-
-  (void)name_len;
 }
 
 int axc_db_identity_always_trusted(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len, void * user_data) {
@@ -1399,3 +1417,41 @@ void axc_db_identity_destroy_ctx(void * user_data) {
 
   //db_exec_quick(stmt, user_data);
 }
+
+const signal_protocol_session_store axc_session_store_tmpl = {
+    .load_session_func = &axc_db_session_load,
+    .get_sub_device_sessions_func = &axc_db_session_get_sub_device_sessions,
+    .store_session_func = &axc_db_session_store,
+    .contains_session_func = &axc_db_session_contains,
+    .delete_session_func = &axc_db_session_delete,
+    .delete_all_sessions_func = &axc_db_session_delete_all,
+    .destroy_func = &axc_db_session_destroy_store_ctx,
+    .user_data = (void *) 0
+};
+
+const signal_protocol_pre_key_store axc_pre_key_store_tmpl = {
+    .load_pre_key = &axc_db_pre_key_load,
+    .store_pre_key = &axc_db_pre_key_store,
+    .contains_pre_key = &axc_db_pre_key_contains,
+    .remove_pre_key = &axc_db_pre_key_remove,
+    .destroy_func = &axc_db_pre_key_destroy_ctx,
+    .user_data = (void *) 0
+};
+
+const signal_protocol_signed_pre_key_store axc_signed_pre_key_store_tmpl = {
+    .load_signed_pre_key = &axc_db_signed_pre_key_load,
+    .store_signed_pre_key = &axc_db_signed_pre_key_store,
+    .contains_signed_pre_key = &axc_db_signed_pre_key_contains,
+    .remove_signed_pre_key = &axc_db_signed_pre_key_remove,
+    .destroy_func = &axc_db_signed_pre_key_destroy_ctx,
+    .user_data = (void *) 0
+};
+
+const signal_protocol_identity_key_store axc_identity_key_store_tmpl = {
+    .get_identity_key_pair = &axc_db_identity_get_key_pair,
+    .get_local_registration_id = &axc_db_identity_get_local_registration_id,
+    .save_identity = &axc_db_identity_save,
+    .is_trusted_identity = &axc_db_identity_always_trusted,
+    .destroy_func = &axc_db_identity_destroy_ctx,
+    .user_data = (void *) 0
+};
