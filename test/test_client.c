@@ -15,9 +15,9 @@
 #include "../src/axc.c"
 #include "../src/axc_store.c"
 
-char * test_fn = "test/test.sqlite";
-char * a_fn = "test/a.sqlite";
-char * b_fn = "test/b.sqlite";
+char * test_fn = "test.sqlite";
+char * a_fn = "a.sqlite";
+char * b_fn = "b.sqlite";
 
 signal_protocol_address addr_alice_42 = {.name = "alice", .name_len = 5, .device_id = 42};
 signal_protocol_address addr_alice_21 = {.name = "alice", .name_len = 5, .device_id = 21};

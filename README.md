@@ -1,33 +1,61 @@
 # axc 0.3.7
-Client lib for [libsignal-c](https://github.com/WhisperSystems/libsignal-protocol-c), implementing the needed database and crypto interfaces using SQLite and gcrypt.
-Initially, the library's name was _libaxolotl_, hence the name.
+Client lib for [libsignal-protocol-c](https://github.com/WhisperSystems/libsignal-protocol-c), implementing the needed database and crypto interfaces using SQLite and gcrypt.
+Initially, the libsignal-protocol-c project was named _libaxolotl_, hence the name `axc`.
 
-Additionally it provides utility functions for common use cases like encrypting and decrypting, ultimately making direct use of libsignal unnecessary.
+Additionally it provides utility functions for common use cases like encrypting and decrypting, ultimately making direct use of libsignal-protocol-c unnecessary.
 
 ## Dependencies
+* CMake (`cmake`)
+* pkg-config (`pkg-config`) or pkgconf (`pkgconf`)
+* glib2 (`libglib2.0-dev`)
+* libsignal-protocol-c (`libsignal-protocol-c-dev`)
 * gcrypt for the crypto (`libgcrypt20-dev`)
 * SQLite for the stores (`libsqlite3-dev`)
+* GNU make (`make`) or Ninja (`ninja-build`)
 
 Optional:
-* [cmocka](https://cmocka.org/) for testing (`make test`)
-* [gcovr](http://gcovr.com/) for a coverage report (`make coverage`)
+* [cmocka](https://cmocka.org/) (`libcmocka-dev`) for testing (`make test`)
+* [gcovr](http://gcovr.com/) (`gcovr`) for a coverage report (`make coverage`)
 
 ## Installation
-First, you should pull the _libsignal_ submodule using `git submodule update --init`.
-If you are using this as a submodule in another project, you should  lso append `--recursive` so it gets pulled as well.
+axc uses CMake as a build system.  It can be used with either GNU make or Ninja.  For example:
 
+```
+mkdir build
+cd build
 
-Since you will need to link _libsignal_ also anyway, it is included here instead of just the headers, and the makefile provides an example of how to compile it as a static library with position independent code.
-In theory there is also the possibility to install it as a shared lib by typing `cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON ..` instead and then type `sudo make install` after the `make`.
+cmake -G Ninja ..  # for options see below
 
+ninja -v all
+ninja -v test  # potentially with CTEST_OUTPUT_ON_FAILURE=1 in the environment
+ninja -v install
+```
 
-The standard makefile target creates a static library with position independent code.
-There is also a target for creating a static library without the code for threading support, as it is implemented using `pthread` and will not work on Windows, and is not necessary for the functioning.
+The following configuration options are supported:
 
+```console
+# rm -f CMakeCache.txt ; cmake -D_AXC_HELP=ON -LH . | grep -B1 ':.*=' | sed 's,^--$,,'
+// Install build artifacts
+AXC_INSTALL:BOOL=ON
 
-The `client` make target is a little demo that should explain the usage a bit, and if that is not enough there is also the testcases and the documentation.
-Unfortunately it is currently broken as the synchronous code was removed.
+// Build with pthreads support
+AXC_WITH_PTHREADS:BOOL=ON
+
+// Build test suite (depends on cmocka)
+AXC_WITH_TESTS:BOOL=ON
+
+// Build shared libraries (rather than static ones)
+BUILD_SHARED_LIBS:BOOL=ON
+
+// Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel ...
+CMAKE_BUILD_TYPE:STRING=
+
+// Install path prefix, prepended onto install directories.
+CMAKE_INSTALL_PREFIX:PATH=/usr/local
+```
+
+They can be passed to CMake as `-D<key>=<value>`, e.g. `-DBUILD_SHARED_LIBS=OFF`.
 
 ## Usage
 The basic idea is to create the `axc_context`, set what is needed (e.g. path to the database or logging function), init it, and then pass it to every function as it contains all necessary data.
-As said before, In theory you should not have to directly communicate with _libsignal_.
+As said before, In theory you should not have to directly communicate with _libsignal-protocol-c_.
