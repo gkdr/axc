@@ -10,6 +10,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
+#include <errno.h>
 #include <stdio.h> // remove
 #include <string.h> // strlen
 #include <unistd.h> // access
@@ -68,9 +69,14 @@ int db_teardown(void ** state) {
   db_p = (void *) 0;
   pstmt_p = (void *) 0;
 
-  remove(AXC_DB_DEFAULT_FN);
-  remove(db_filename);
+  if (remove(AXC_DB_DEFAULT_FN)) {
+    perror("failed to remove default db");
+  }
+  if (remove(db_filename)) {
+    perror("failed to remove test db");
+  }
 
+  // as the call to remove often fails intentionally as at least one of the two DVs does not exist, don't let cleanup fail the test
   return 0;
 }
 
