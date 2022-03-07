@@ -43,6 +43,7 @@ jobs:
           -G Ninja \
           -DAXC_WITH_PTHREADS=${{ matrix.AXC_WITH_PTHREADS }} \
           -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} \
+          -D_AXC_WARNINGS_AS_ERRORS=ON \
           -D_AXC_WITH_COVERAGE=ON
 
     - name: Build
