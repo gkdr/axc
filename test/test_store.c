@@ -62,8 +62,18 @@ int db_setup(void **state) {
 
 int db_teardown(void ** state) {
   (void) state;
-  sqlite3_finalize(pstmt_p);
-  sqlite3_close(db_p);
+  
+  int ret_val = 0;
+  ret_val = sqlite3_finalize(pstmt_p);
+  if (ret_val) {
+    fprintf(stderr, "failed to finalize statement, SQLite error code: %d\n", ret_val);
+  }
+  
+  ret_val = sqlite3_close(db_p);
+  if (ret_val) {
+    fprintf(stderr, "failed to close not finalized db");
+  }
+
   axc_context_destroy_all(ctx_global_p);
 
   db_p = (void *) 0;
