@@ -68,10 +68,10 @@ int db_teardown(void ** state) {
   if (ret_val) {
     fprintf(stderr, "failed to finalize statement, SQLite error code: %d\n", ret_val);
   }
-  
+
   ret_val = sqlite3_close(db_p);
   if (ret_val) {
-    fprintf(stderr, "failed to close not finalized db");
+    fprintf(stderr, "failed to close not finalized db\n");
   }
 
   axc_context_destroy_all(ctx_global_p);
