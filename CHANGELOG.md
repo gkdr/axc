@@ -9,7 +9,8 @@
 
 ## Infrastructure
 - Cover Windows build by GitHub Actions CI using msys2 ([#32](https://github.com/gkdr/axc/pull/32)) (thanks, [@hartwork](https://github.com/hartwork)!)
-- Reject build warnings as errors [#3r](https://github.com/gkdr/axc/pull/34)) (thanks, [@hartwork](https://github.com/hartwork)!)
+- Reject build warnings as errors [#34](https://github.com/gkdr/axc/pull/34)) (thanks, [@hartwork](https://github.com/hartwork)!)
+- dependabot: update `actions/checkout` from `2.4.0` to `3.0.0` [#36](https://github.com/gkdr/axc/pull/36)
 
 ## [0.3.7] - 2022-01-29
 ### Fixed
