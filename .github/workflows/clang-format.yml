@@ -1,0 +1,40 @@
+# Copyright (c) 2022 Sebastian Pipping <sebastian@pipping.org>
+# Licensed under the GPL v2 or later
+
+name: Enforce clang-format
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '0 2 * * 5'  # Every Friday at 2am
+
+jobs:
+  clang-format:
+    name: Enforce clang-format
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v3.0.0
+
+    - name: Add Clang/LLVM repositories
+      run: |-
+        set -x
+        source /etc/os-release
+        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+        sudo add-apt-repository "deb http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-14 main"
+
+    - name: Install clang-format
+      run: |-
+        set -x
+        sudo apt-get update
+        sudo apt-get install --yes --no-install-recommends -V \
+            clang-format-14
+
+    - name: Apply clang-format
+      run: |-
+        CLANG_FORMAT=clang-format-14 ./apply-clang-format.sh
+
+    - name: Require empty diff
+      run: |-
+        git diff --exit-code  # non-zero exit code fails CI
