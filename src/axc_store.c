@@ -68,8 +68,13 @@ static void db_conn_cleanup(sqlite3 * db_p, sqlite3_stmt * pstmt_p, const char *
     axc_log(ctx_p, AXC_LOG_ERROR, "%s: %s (sqlite err: %s)\n", func_name, err_msg, sqlite3_errmsg(db_p));
   }
 
+  // it does not matter whether the statement failed or not, so just ignore the return value
   (void) sqlite3_finalize(pstmt_p);
-  (void) sqlite3_close(db_p);
+
+  int ret_val = sqlite3_close(db_p);
+  if (ret_val) {
+    axc_log(ctx_p, AXC_LOG_WARNING, "%s: failed to close the db as it is not finalized\n", func_name);
+  }
 }
 
 /**
