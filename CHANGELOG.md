@@ -1,5 +1,18 @@
 # Changelog
 
+## [UNRELEASED]
+### Fixed
+- Add missing field `Requires.private:` to auto-generated pkg-config file `libaxc.pc` ([#32](https://github.com/gkdr/axc/pull/32)) (thanks, [@hartwork](https://github.com/hartwork)!)
+
+### Changed
+- Migrate build system from a Makefile to CMake ([#32](https://github.com/gkdr/axc/pull/32)) (thanks, [@hartwork](https://github.com/hartwork)!)
+
+## Infrastructure
+- Cover Windows build by GitHub Actions CI using msys2 ([#32](https://github.com/gkdr/axc/pull/32)) (thanks, [@hartwork](https://github.com/hartwork)!)
+- Reject build warnings as errors [#34](https://github.com/gkdr/axc/pull/34)) (thanks, [@hartwork](https://github.com/hartwork)!)
+- dependabot: update `actions/checkout` from `2.4.0` to `3.0.0` [#36](https://github.com/gkdr/axc/pull/36)
+- dependabot: update `actions/upload-artifact` from `2.3.1` to `3.0.0` [#37](https://github.com/gkdr/axc/pull/37)
+
 ## [0.3.7] - 2022-01-29
 ### Fixed
 - Compiler warnings ([#21](https://github.com/gkdr/axc/issues/21), [#29](https://github.com/gkdr/axc/pull/29)) (thanks, [@hartwork](https://github.com/hartwork)!)
@@ -7,14 +20,9 @@
 - Fix the build for users without libsignal-protocol-c installed system-wide ([#31](https://github.com/gkdr/axc/pull/31)) (thanks, [@hartwork](https://github.com/hartwork)!)
 - The example code is runnable again, and some memory leaks ([#14](https://github.com/gkdr/axc/pull/14)) (thanks, [@fbrausse](https://github.com/fbrausse)!)
 - Compiler warnings for test files.
-- Add missing field `Requires.private:` to auto-generated pkg-config file `libaxc.pc` ([#32](https://github.com/gkdr/axc/pull/32)) (thanks, [@hartwork](https://github.com/hartwork)!)
-
-### Changed
-- Migrate build system from a Makefile to CMake ([#32](https://github.com/gkdr/axc/pull/32)) (thanks, [@hartwork](https://github.com/hartwork)!)
 
 ### Infrastructure
 - Cover Linux build by GitHub Actions CI ([#31](https://github.com/gkdr/axc/pull/31)) (thanks, [@hartwork](https://github.com/hartwork)!)
-- Cover Windows build by GitHub Actions CI using msys2 ([#32](https://github.com/gkdr/axc/pull/32)) (thanks, [@hartwork](https://github.com/hartwork)!)
 
 ## [0.3.6] - 2021-09-06
 ### Fixed

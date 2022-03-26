@@ -23,7 +23,7 @@ jobs:
         AXC_WITH_PTHREADS: ['ON', 'OFF']
     steps:
 
-    - uses: actions/checkout@v2.4.0
+    - uses: actions/checkout@v3.0.0
 
     - name: Install build dependencies
       uses: msys2/setup-msys2@v2
@@ -48,6 +48,7 @@ jobs:
           -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc -DCMAKE_SYSTEM_NAME=Windows -DWIN32=ON -DMINGW=ON \
           -DAXC_WITH_PTHREADS=${{ matrix.AXC_WITH_PTHREADS }} \
           -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} \
+          -D_AXC_WARNINGS_AS_ERRORS=ON \
           -D_AXC_WITH_COVERAGE=ON
 
     - name: Build
@@ -70,7 +71,7 @@ jobs:
         find ROOT/ -not -type d | sort | xargs ls -l
 
     - name: Store Windows binaries
-      uses: actions/upload-artifact@v2.3.1
+      uses: actions/upload-artifact@v3.0.0
       with:
         name: axc_win32bin_shared_${{ matrix.BUILD_SHARED_LIBS }}_pthreads_${{ matrix.AXC_WITH_PTHREADS }}
         path: |

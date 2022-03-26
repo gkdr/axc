@@ -20,7 +20,7 @@ jobs:
         AXC_WITH_PTHREADS: ['ON', 'OFF']
     steps:
 
-    - uses: actions/checkout@v2.4.0
+    - uses: actions/checkout@v3.0.0
 
     - name: Install build dependencies
       run: |-
@@ -43,6 +43,7 @@ jobs:
           -G Ninja \
           -DAXC_WITH_PTHREADS=${{ matrix.AXC_WITH_PTHREADS }} \
           -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} \
+          -D_AXC_WARNINGS_AS_ERRORS=ON \
           -D_AXC_WITH_COVERAGE=ON
 
     - name: Build
@@ -64,7 +65,7 @@ jobs:
         find ROOT/ -not -type d | sort | xargs ls -l
 
     - name: Store coverage HTML report
-      uses: actions/upload-artifact@v2.3.1
+      uses: actions/upload-artifact@v3.0.0
       with:
         name: axc_coverage_shared_${{ matrix.BUILD_SHARED_LIBS }}_pthreads_${{ matrix.AXC_WITH_PTHREADS }}
         path: build/coverage*.html
