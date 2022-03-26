@@ -1,8 +1,12 @@
 # Changelog
 
 ## [UNRELEASED]
+### Added
+- Log warning if `sqlite3_close()` fails
+
 ### Fixed
 - Add missing field `Requires.private:` to auto-generated pkg-config file `libaxc.pc` ([#32](https://github.com/gkdr/axc/pull/32)) (thanks, [@hartwork](https://github.com/hartwork)!)
+- Tests on Windows CI
 
 ### Changed
 - Migrate build system from a Makefile to CMake ([#32](https://github.com/gkdr/axc/pull/32)) (thanks, [@hartwork](https://github.com/hartwork)!)
