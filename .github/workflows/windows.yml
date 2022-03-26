@@ -56,10 +56,10 @@ jobs:
         ninja -v -C build all
         cat build/libaxc.pc
 
-    - name: Test (KNOWN TO FAIL)
+    - name: Test 
       run: |-
         set -x
-        CTEST_OUTPUT_ON_FAILURE=1 ninja -C build test || true  # TODO fix tests
+        CTEST_OUTPUT_ON_FAILURE=1 ninja -C build test 
         # Note: msys2 does not come with a package for gcovr, yet(?)
         # ninja -C build coverage
 
