@@ -80,10 +80,10 @@ int db_teardown(void ** state) {
   db_p = (void *) 0;
   pstmt_p = (void *) 0;
 
-  if (remove(AXC_DB_DEFAULT_FN)) {
+  if (!access(AXC_DB_DEFAULT_FN, F_OK) && remove(AXC_DB_DEFAULT_FN)) {
     perror("failed to remove default db");
   }
-  if (remove(ctx_global_p->db_filename)) {
+  if (!access(ctx_global_p->db_filename, F_OK) && remove(ctx_global_p->db_filename)) {
     perror("failed to remove test db");
   }
 
