@@ -80,7 +80,6 @@ int db_teardown(void ** state) {
   db_p = (void *) 0;
   pstmt_p = (void *) 0;
 
-
   if (!access(AXC_DB_DEFAULT_FN, F_OK) && remove(AXC_DB_DEFAULT_FN)) {
     perror("failed to remove default db");
   }
