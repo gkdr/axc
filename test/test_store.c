@@ -10,7 +10,6 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include <errno.h>
 #include <stdio.h> // remove
 #include <string.h> // strlen
 #include <unistd.h> // access
