@@ -21,6 +21,7 @@ sqlite3 * db_p;
 sqlite3_stmt * pstmt_p;
 
 char * db_filename = "test.sqlite";
+char * rand_db_filename = (void *) 0;
 axc_context * ctx_global_p;
 
 signal_protocol_address addr_alice_42 = {.name = "alice", .name_len = 5, .device_id = 42};
@@ -40,7 +41,7 @@ int db_setup_internal(void **state) {
   (void) state;
 
   int rand_int = g_random_int();
-  char * rand_db_filename = g_strdup_printf("test_%d.sqlite", rand_int);
+  rand_db_filename = g_strdup_printf("test_%d.sqlite", rand_int);
 
   ctx_global_p = (void *) 0;
   assert_int_equal(axc_context_create(&ctx_global_p), 0);
@@ -79,6 +80,7 @@ int db_teardown(void ** state) {
   db_p = (void *) 0;
   pstmt_p = (void *) 0;
 
+
   if (!access(AXC_DB_DEFAULT_FN, F_OK) && remove(AXC_DB_DEFAULT_FN)) {
     perror("failed to remove default db");
   }
@@ -87,6 +89,9 @@ int db_teardown(void ** state) {
   }
 
   axc_context_destroy_all(ctx_global_p);
+
+  g_free(rand_db_filename);
+  rand_db_filename = (void *) 0;
 
   // as the call to remove often fails intentionally as at least one of the two DVs does not exist, don't let cleanup fail the test
   return 0;
