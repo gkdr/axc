@@ -48,10 +48,6 @@ jobs:
         asan_flags='-O0 -g -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls'
         ubsan_flags='-fsanitize=undefined -fno-sanitize-recover=all'
 
-        # Note: This is because the test suite is currently not free
-        #       of memory leaks
-        echo 'ASAN_OPTIONS=detect_leaks=0' >> "${GITHUB_ENV}"
-
         set -x
         cmake \
           -B build \
