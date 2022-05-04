@@ -4,7 +4,6 @@
  * Author: Richard Bayerle <riba@firemail.cc>
  */
 
-
 #pragma once
 
 #include "signal_protocol.h"
@@ -16,29 +15,33 @@
 // Function signatures implementing their interfaces intentionally left in their code style.
 
 #define AXC_DB_NOT_INITIALIZED (-1)
-#define AXC_DB_NEEDS_ROLLBACK    0
-#define AXC_DB_INITIALIZED       1
+#define AXC_DB_NEEDS_ROLLBACK  0
+#define AXC_DB_INITIALIZED     1
 
 // session store
-int axc_db_session_load(signal_buffer **record, signal_buffer **user_record, const signal_protocol_address *address, void *user_data);
-int axc_db_session_get_sub_device_sessions(signal_int_list **sessions, const char *name, size_t name_len, void *user_data);
-int axc_db_session_store(const signal_protocol_address *address, uint8_t *record, size_t record_len, uint8_t *user_record, size_t user_record_len, void *user_data);
-int axc_db_session_contains(const signal_protocol_address *address, void *user_data);
-int axc_db_session_delete(const signal_protocol_address *address, void *user_data);
-int axc_db_session_delete_all(const char *name, size_t name_len, void *user_data);
-void axc_db_session_destroy_store_ctx(void *user_data);
+int axc_db_session_load(signal_buffer ** record, signal_buffer ** user_record, const signal_protocol_address * address,
+                        void * user_data);
+int axc_db_session_get_sub_device_sessions(signal_int_list ** sessions, const char * name, size_t name_len,
+                                           void * user_data);
+int axc_db_session_store(const signal_protocol_address * address, uint8_t * record, size_t record_len,
+                         uint8_t * user_record, size_t user_record_len, void * user_data);
+int axc_db_session_contains(const signal_protocol_address * address, void * user_data);
+int axc_db_session_delete(const signal_protocol_address * address, void * user_data);
+int axc_db_session_delete_all(const char * name, size_t name_len, void * user_data);
+void axc_db_session_destroy_store_ctx(void * user_data);
 
 // pre key store
-int axc_db_pre_key_load(signal_buffer **record, uint32_t pre_key_id, void *user_data);
-int axc_db_pre_key_store(uint32_t pre_key_id, uint8_t *record, size_t record_len, void *user_data);
-int axc_db_pre_key_contains(uint32_t pre_key_id, void *user_data);
-int axc_db_pre_key_remove(uint32_t pre_key_id, void *user_data);
-void axc_db_pre_key_destroy_ctx(void *user_data);
+int axc_db_pre_key_load(signal_buffer ** record, uint32_t pre_key_id, void * user_data);
+int axc_db_pre_key_store(uint32_t pre_key_id, uint8_t * record, size_t record_len, void * user_data);
+int axc_db_pre_key_contains(uint32_t pre_key_id, void * user_data);
+int axc_db_pre_key_remove(uint32_t pre_key_id, void * user_data);
+void axc_db_pre_key_destroy_ctx(void * user_data);
 /**
  * Stores a whole list of pre keys at once, inside a single transaction.
  *
  * @param pre_keys_head Pointer to the first element of the list.
- * @param user_data_p Optional. The user_data as received from the axolotl interface, will be used to set the database name.
+ * @param user_data_p Optional. The user_data as received from the axolotl interface, will be used to set the database
+ * name.
  */
 int axc_db_pre_key_store_list(signal_protocol_key_helper_pre_key_list_node * pre_keys_head, axc_context * ctx_p);
 
@@ -72,23 +75,26 @@ int axc_db_pre_key_get_max_id(axc_context * ctx_p, uint32_t * max_id_p);
 int axc_db_pre_key_get_count(axc_context * ctx_p, size_t * count_p);
 
 // signed pre key store
-int axc_db_signed_pre_key_load(signal_buffer **record, uint32_t signed_pre_key_id, void *user_data);
-int axc_db_signed_pre_key_store(uint32_t signed_pre_key_id, uint8_t *record, size_t record_len, void *user_data);
-int axc_db_signed_pre_key_contains(uint32_t signed_pre_key_id, void *user_data);
-int axc_db_signed_pre_key_remove(uint32_t signed_pre_key_id, void *user_data);
-void axc_db_signed_pre_key_destroy_ctx(void *user_data);
+int axc_db_signed_pre_key_load(signal_buffer ** record, uint32_t signed_pre_key_id, void * user_data);
+int axc_db_signed_pre_key_store(uint32_t signed_pre_key_id, uint8_t * record, size_t record_len, void * user_data);
+int axc_db_signed_pre_key_contains(uint32_t signed_pre_key_id, void * user_data);
+int axc_db_signed_pre_key_remove(uint32_t signed_pre_key_id, void * user_data);
+void axc_db_signed_pre_key_destroy_ctx(void * user_data);
 
 // identity key store
-int axc_db_identity_get_key_pair(signal_buffer **public_data, signal_buffer **private_data, void *user_data);
-int axc_db_identity_get_local_registration_id(void *user_data, uint32_t *registration_id);
-int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t *key_data, size_t key_len, void *user_data);
-int axc_db_identity_is_trusted(const char *name, size_t name_len, uint8_t *key_data, size_t key_len, void *user_data);
-int axc_db_identity_always_trusted(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len, void * user_data);
-void axc_db_identity_destroy_ctx(void *user_data);
+int axc_db_identity_get_key_pair(signal_buffer ** public_data, signal_buffer ** private_data, void * user_data);
+int axc_db_identity_get_local_registration_id(void * user_data, uint32_t * registration_id);
+int axc_db_identity_save(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len, void * user_data);
+int axc_db_identity_is_trusted(const char * name, size_t name_len, uint8_t * key_data, size_t key_len,
+                               void * user_data);
+int axc_db_identity_always_trusted(const signal_protocol_address * addr_p, uint8_t * key_data, size_t key_len,
+                                   void * user_data);
+void axc_db_identity_destroy_ctx(void * user_data);
 
 // additional helper functions
 /**
- * Saves the public and private key by using the api serialization calls, as this format (and not the higher-level key type) is needed by the getter.
+ * Saves the public and private key by using the api serialization calls, as this format (and not the higher-level key
+ * type) is needed by the getter.
  *
  * @param Pointer to the keypair as returned by axolotl_key_helper_generate_identity_key_pair
  * @param axc_ctx_p Pointer to the axc context.
@@ -121,7 +127,6 @@ int axc_db_create(axc_context * axc_ctx_p);
  * @return 0 on success, negative on error
  */
 int axc_db_destroy(axc_context * axc_ctx_p);
-
 
 /**
  * Sets the value of a property in the database's "settings" table.

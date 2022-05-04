@@ -4,7 +4,6 @@
  * Author: Richard Bayerle <riba@firemail.cc>
  */
 
-
 #pragma once
 
 #include <stdint.h>
@@ -29,7 +28,7 @@ typedef signal_protocol_address axc_address;
 #define AXC_ERR_NOT_A_PREKEY_MSG -10100
 #define AXC_ERR_INVALID_KEY_ID   -10200
 
-#define AXC_DB_DEFAULT_FN "axc.sqlite"
+#define AXC_DB_DEFAULT_FN   "axc.sqlite"
 #define AXC_PRE_KEYS_AMOUNT 100
 
 /**
@@ -59,14 +58,15 @@ int axc_context_set_db_fn(axc_context * ctx_p, char * filename, size_t fn_len);
  */
 char * axc_context_get_db_fn(axc_context * ctx_p);
 
-void axc_context_set_log_func(axc_context * ctx_p, void (*log_func)(int level, const char * message, size_t len, void * user_data));
+void axc_context_set_log_func(axc_context * ctx_p,
+                              void (*log_func)(int level, const char * message, size_t len, void * user_data));
 void axc_context_set_log_level(axc_context * ctx_p, int level);
 int axc_context_get_log_level(axc_context * ctx_p);
 
 void axc_context_destroy_all(axc_context * ctx_p);
 signal_context * axc_context_get_axolotl_ctx(axc_context * ctx_p);
 
-void axc_default_log(int level, const char *message, size_t len, void *user_data);
+void axc_default_log(int level, const char * message, size_t len, void * user_data);
 void axc_log(axc_context * ctx_p, int level, const char * format, ...);
 
 int axc_buf_list_item_create(axc_buf_list_item ** item_pp, uint32_t * id_p, axc_buf * data_p);
@@ -110,7 +110,8 @@ void axc_cleanup(axc_context * ctx_p);
 
 /**
  * "Installs" the library by creating the database and saving the necessary encryption keys into it.
- * Needs to be called once at the beginning, but can be called at every startup as it will not touch an initialized database.
+ * Needs to be called once at the beginning, but can be called at every startup as it will not touch an initialized
+ * database.
  *
  * @param ctx_p Pointer to the axc context as received from axc_init().
  * @return 0 on success, negative on failure
@@ -143,7 +144,8 @@ void axc_buf_free(axc_buf * buf);
  * @param ciphertext_pp Will point to the serialized ciphertext afterwards.
  * @return 0 on success, negative on error.
  */
-int axc_message_encrypt_and_serialize(axc_buf * msg_p, const axc_address * recipient_addr_p, axc_context * ctx_p, axc_buf ** ciphertext_pp);
+int axc_message_encrypt_and_serialize(axc_buf * msg_p, const axc_address * recipient_addr_p, axc_context * ctx_p,
+                                      axc_buf ** ciphertext_pp);
 
 /**
  * Decrypts a received message. Needs an established session.
@@ -157,7 +159,8 @@ int axc_message_encrypt_and_serialize(axc_buf * msg_p, const axc_address * recip
  * @param plaintext_pp Will point to the plaintext afterwards. Has to be freed.
  * @return 0 on success, negative on error.
  */
-int axc_message_decrypt_from_serialized (axc_buf * msg_p, axc_address * sender_addr_p, axc_context * ctx_p, axc_buf ** plaintext_pp);
+int axc_message_decrypt_from_serialized(axc_buf * msg_p, axc_address * sender_addr_p, axc_context * ctx_p,
+                                        axc_buf ** plaintext_pp);
 
 /**
  * Checks if an initiated session exists (and no pending synchronous handshake).
@@ -183,20 +186,18 @@ int axc_session_exists_any(const char * name, axc_context * ctx_p);
  * @param pre_key_id The ID of the used prekey.
  * @param pre_key_public_serialized_p Pointer to a buffer containing the serialized public part of the pre key pair.
  * @param signed_pre_key_id The ID of the signed prekey.
- * @param signed_pre_key_public_serialized_p Pointer to a buffer containing the serialized public part of the signed pre key pair.
+ * @param signed_pre_key_public_serialized_p Pointer to a buffer containing the serialized public part of the signed pre
+ * key pair.
  * @param signed_pre_key_signature_p Pointer to a buffer containing the signature data of the signed pre key.
- * @param identity_key_public_serialized_p Pointer to a buffer containing the serialized public part of the identity key pair.
+ * @param identity_key_public_serialized_p Pointer to a buffer containing the serialized public part of the identity key
+ * pair.
  * @param remote_address_p Pointer to the address of the recipient.
  * @param ctx_p Pointer to the axc_context.
  * @return 0 on success, negative on error.
  */
-int axc_session_from_bundle(uint32_t pre_key_id,
-                            axc_buf * pre_key_public_serialized_p,
-                            uint32_t signed_pre_key_id,
-                            axc_buf * signed_pre_key_public_serialized_p,
-                            axc_buf * signed_pre_key_signature_p,
-                            axc_buf * identity_key_public_serialized_p,
-                            const axc_address * remote_address_p,
+int axc_session_from_bundle(uint32_t pre_key_id, axc_buf * pre_key_public_serialized_p, uint32_t signed_pre_key_id,
+                            axc_buf * signed_pre_key_public_serialized_p, axc_buf * signed_pre_key_signature_p,
+                            axc_buf * identity_key_public_serialized_p, const axc_address * remote_address_p,
                             axc_context * ctx_p);
 
 /**
@@ -211,7 +212,8 @@ int axc_session_delete(const char * user, uint32_t device_id, axc_context * ctx_
 
 /**
  * Creates a session from a received pre key message and uses it to decrypt the actual message body.
- * The ciphertext is decrypted here to avoid reserializing the message or having to deal with internal axolotl data structures.
+ * The ciphertext is decrypted here to avoid reserializing the message or having to deal with internal axolotl data
+ * structures.
  *
  * @param pre_key_msg_serialized_p Pointer to the buffer containing the serialized message.
  * @param remote_address_p Pointer to the remote (sender) address.
@@ -219,7 +221,8 @@ int axc_session_delete(const char * user, uint32_t device_id, axc_context * ctx_
  * @param msg_pp Will contain a pointer to the decrypted plaintext.
  * @return 0 on success, negative on error
  */
-int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address * remote_address_p, axc_context * ctx_p, axc_buf ** plaintext_pp);
+int axc_pre_key_message_process(axc_buf * pre_key_msg_serialized_p, axc_address * remote_address_p, axc_context * ctx_p,
+                                axc_buf ** plaintext_pp);
 
 /**
  * Retrieves the own public identity key.
