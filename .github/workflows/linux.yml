@@ -27,14 +27,14 @@ jobs:
         set -x
         source /etc/os-release
         wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-        sudo add-apt-repository "deb http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-13 main"
+        sudo add-apt-repository "deb http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-16 main"
 
     - name: Install build dependencies
       run: |-
         set -x
         sudo apt-get update
         sudo apt-get install --yes --no-install-recommends -V \
-            clang-13 \
+            clang-16 \
             gcovr \
             libcmocka-dev \
             libgcrypt20-dev \
@@ -57,7 +57,7 @@ jobs:
           -B build \
           -G Ninja \
           \
-          -DCMAKE_C_COMPILER=clang-13 \
+          -DCMAKE_C_COMPILER=clang-16 \
           -DCMAKE_C_FLAGS="${asan_flags} ${ubsan_flags}" \
           -DCMAKE_EXE_LINKER_FLAGS="${asan_flags} ${ubsan_flags}" \
           -DCMAKE_MODULE_LINKER_FLAGS="${asan_flags} ${ubsan_flags}" \
